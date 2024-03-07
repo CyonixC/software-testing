@@ -1,0 +1,6 @@
+cherrypy
+pyserial
+Sphinx==1.2.2
+cachetools==2.0.0
+pymongo
+requests==2.19.1

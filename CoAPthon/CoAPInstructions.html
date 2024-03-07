@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>50&period;053 Software Testing and Verification</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="50053-software-testing-and-verification">50.053 Software Testing and Verification</h1>
+<h3 id="fuzzing-the-constrained-application-protocol-coap-implementation">Fuzzing the Constrained Application Protocol (CoAP) implementation.</h3>
+<p>The goal of this task is to design and implement a fuzzer to gain hands-on experience in testing real, implemented protocols, specifically, either the Java (jCoAP) or Python (CoAPthon) implementation of the CoAP protocol.</p>
+<h3 id="coap">CoAP</h3>
+<p>Constrained Application Protocol (CoAP) is a UDP-based transport protocol developed for constrained devices, defined in RFC 7252. These are devices with limited memory, storage and computing power, limited battery power, and low bandwidth.</p>
+<p>CoAP is like a limited HTTP, designed for constrained IoT devices. Similar to HTTP, it is client and server-based, where the client makes a request and the server sends a response. Also similar to HTTP, it is based on the REST mode.</p>
+<h4 id="rest-model">REST model</h4>
+<p>The REST model is an architectural style that defines a set of constraints to create a uniform interface for communication between client and server. The primary data representation in REST is a resource, which is basically an abstraction of any type of information. Then you can use commands like GET, POST, PUT and DELETE to read, write and manipulate this resource. Every resource has a URI (Uniform Resource Identifier).</p>
+<p>The below image illustrates the format of a CoAP message.</p>
+<table style="width:100%">
+  <tr>
+    <td>
+      <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706252962/Untitled_miccpv.png" alt="stack" width="500" height="auto"/>
+    </td>
+    <td>
+      <img src="https://academy.nordicsemi.com/wp-content/uploads/2022/10/cellfund_less5_coap_protocol.png" alt="stack" width="800" height="auto"/>
+    </td>
+  </tr>
+</table>
+<p align="center">Figure 1. Protocol stack and frame structure.</p>
+<table>
+<thead>
+<tr>
+<th>CoAP message header</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ver</td>
+<td>It is a 2-bit unsigned integer indicating the CoAP version number. This is set to 1, other values are reserved for future versions.</td>
+</tr>
+<tr>
+<td>T</td>
+<td>It is a 2-bit unsigned integer indicating the message type: confirmable (0), non-confirmable (1), ACK (2), or RESET (3).</td>
+</tr>
+<tr>
+<td>TKL</td>
+<td>It is a 4-bit unsigned integer indicating the length of the token (0 to 8 bytes).</td>
+</tr>
+<tr>
+<td>Code</td>
+<td>It is an 8-bit unsigned integer split into two parts: a 3-bit class (MSBs) and a 5-bit detail (LSBs). Class (0-7) and detail (0-31), where class indicates request, success response or error response and detail gives additional information to the class.</td>
+</tr>
+<tr>
+<td>Message ID</td>
+<td>It is a 16-bit unsigned integer used for matching responses and detecting message duplication.</td>
+</tr>
+<tr>
+<td>Token</td>
+<td>A sequence of 0-8 bytes, which the server echoes in any response. The token is generated by the client and should be generated so they are unique and random</td>
+</tr>
+<tr>
+<td>Optons</td>
+<td>number of options that can be included in a CoAP message</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706678953/Selection_122_nfgyoo.png" alt="messages" width="600" height="auto"/>
+</p>
+<p align="center">Figure 2. Examples of Confirmable and Non-confirmable CoAP messages</p>
+<h2 id="server-setup">Server setup</h2>
+<p>To conduct this task, you need only one machine since you can run both the client and server using the same loopback interface. You can choose which implementation of the protocol you want to fuzz, either Java or Python. We provide a slightly modified version of CoAPthon where we have addressed some broken dependencies you might face when building from source.</p>
+<h3 id="build-jcoap-from-source">Build jCoAP from source</h3>
+<p>Step1: build both the <strong>ws4d-jcoap-examples</strong> and the <strong>ws4d-jcoap</strong></p>
+<pre><code class="language-bash"><span class="hljs-comment">#if java not installed: https://www.oracle.com/java/technologies/downloads/ </span>
+sudo apt install default-jre
+java -version
+
+<span class="hljs-comment">#clone the repository</span>
+git <span class="hljs-built_in">clone</span> https://gitlab.amd.e-technik.uni-rostock.de/ws4d/jcoap
+<span class="hljs-built_in">cd</span> jcoap/ws4d-jcoap
+
+<span class="hljs-comment">#if maven not installed </span>
+sudo apt install maven -y
+ 
+sudo mvn clean install
+
+<span class="hljs-built_in">cd</span> ../ws4d-jcoap-examples/
+sudo mvn clean install
+</code></pre>
+<p>If any build issues encoutered due to incompatibility version, modify the version <code>1.6</code> to <code>1.8</code> in the <code>pom.xml</code> file as follows:</p>
+<pre><code class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">plugin</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>maven-compiler-plugin<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+	<span class="hljs-tag">&lt;<span class="hljs-name">configuration</span>&gt;</span>
+		<span class="hljs-tag">&lt;<span class="hljs-name">source</span>&gt;</span>1.8<span class="hljs-tag">&lt;/<span class="hljs-name">source</span>&gt;</span>
+		<span class="hljs-tag">&lt;<span class="hljs-name">target</span>&gt;</span>1.8<span class="hljs-tag">&lt;/<span class="hljs-name">target</span>&gt;</span>
+	<span class="hljs-tag">&lt;/<span class="hljs-name">configuration</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span>&gt;</span>
+</code></pre>
+<p>Step2: copy the core file:</p>
+<pre><code class="language-bash">/jcoap/ws4d-jcoap/target/classes/org/ws4d/coap/core
+to 
+/jcoap/ws4d-jcoap-examples/target/classes/org/ws4d/coap
+
+<span class="hljs-comment"># (adjust your path accordingly):</span>
+sudo <span class="hljs-built_in">cp</span> -r ~/Downloads/jcoap/ws4d-jcoap/target/classes/org/ws4d/coap/core ~/Downloads/jcoap/ws4d-jcoap-examples/target/classes/org/ws4d/coap
+</code></pre>
+<p>Step3: run the server</p>
+<p>You can run the server using a command as follows (you might need to adjust your path accordingly):</p>
+<pre><code>/usr/lib/jvm/java-1.11.0-openjdk-amd64/bin/java \
+-javaagent:/home/asset/Downloads/idea-IU-233.13135.103/lib/idea_rt.jar=40677:/home/asset/Downloads/idea-IU-233.13135.103/bin \
+-Dfile.encoding=UTF-8 \
+-classpath \
+/home/asset/Downloads/jcoap/ws4d-jcoap-examples/target/classes:\
+/root/.m2/repository/org/apache/logging/log4j/log4j-core/2.6.2/log4j-core-2.6.2.jar:\
+/root/.m2/repository/org/apache/logging/log4j/log4j-api/2.6.2/log4j-api-2.6.2.jar:\
+/root/.m2/repository/org/ws4d/jcoap/jcoap-core/1.1.5/jcoap-core-1.1.5.jar \
+org.ws4d.coap.example.basics.Server
+
+</code></pre>
+<p>(Recommended) You can use <a href="https://www.jetbrains.com/idea/download/">IntelliJ</a> to run the server since it supports backtrace (the server dont support logs):</p>
+<pre><code class="language-bash">tar -xvf ideaIU-2023.X.X.tar.gz
+
+<span class="hljs-built_in">cd</span> idea-IC-231.8109.175/
+sudo ./bin/idea.sh
+</code></pre>
+<p>open <code>/home/asset/Desktop/work/jcoap/ws4d-jcoap-examples</code> as a new mavean project  and go to <code>/home/asset/Desktop/work/jcoap/ws4d-jcoap-examples/target/classes/org/ws4d/coap/example/basics</code>, then right click the Server file and click on run. Specify your java SDK path if error prompt.</p>
+<p>You will see an output in IntelliJ like this, indicating that the server is already running (127.0.0.1 on port 5683):</p>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706252037/Selection_116_zszcfs.png" alt="animated" width="1000" height="auto"/>
+</p>
+<p align="center">Figure 3. Output logs from IntelliJ IDEA.</p>
+<p>You can ignore the error: <code>ERROR StatusLogger No log4j2 configuration file found. Using default configuration: logging only errors to the console</code>. The default configuration is enough to display the errors/bugs you will find in the console.</p>
+<h3 id="sending-a-request-to-the-server-in-javascript">Sending a request to the server in javascript</h3>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> coap = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;coap&#x27;</span>);
+<span class="hljs-keyword">const</span> samplePayload = <span class="hljs-string">&#x27;h&#x27;</span>.<span class="hljs-title function_">repeat</span>(<span class="hljs-number">1</span>) + <span class="hljs-string">&#x27;e&#x27;</span>.<span class="hljs-title function_">repeat</span>(<span class="hljs-number">1</span>) + <span class="hljs-string">&#x27;l&#x27;</span>.<span class="hljs-title function_">repeat</span>(<span class="hljs-number">1</span>)  + <span class="hljs-string">&#x27;o&#x27;</span>.<span class="hljs-title function_">repeat</span>(<span class="hljs-number">60</span>)+<span class="hljs-string">&#x27;haha&#x27;</span>;
+<span class="hljs-comment">// const samplePayload = &#x27;h&#x27;.repeat(10);</span>
+
+
+<span class="hljs-comment">// samplePayload = samplePayload + &#x27;end&#x27;</span>
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;samplePayload.length: &#x27;</span>, samplePayload.<span class="hljs-property">length</span>);
+
+<span class="hljs-keyword">const</span> req = coap.<span class="hljs-title function_">request</span>({
+  <span class="hljs-attr">host</span>: <span class="hljs-string">&#x27;127.0.0.1&#x27;</span>,
+  <span class="hljs-attr">pathname</span>: <span class="hljs-string">&#x27;/hello&#x27;</span>, <span class="hljs-comment">// or /basic only in jCoAP</span>
+  <span class="hljs-attr">port</span>: <span class="hljs-number">5683</span>,
+  <span class="hljs-attr">method</span>: <span class="hljs-string">&#x27;POST&#x27;</span>,
+  <span class="hljs-attr">confirmable</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">options</span>: {
+    <span class="hljs-title class_">Size1</span>: samplePayload.<span class="hljs-property">length</span>,
+    <span class="hljs-title class_">Block1</span>: <span class="hljs-literal">true</span>,
+  }
+});
+
+req.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;response&#x27;</span>, <span class="hljs-keyword">function</span> (<span class="hljs-params">res</span>) {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;POST request received response:&#x27;</span>);
+  res.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-keyword">function</span> (<span class="hljs-params">chunk</span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(chunk.<span class="hljs-title function_">toString</span>());
+  });
+});
+
+req.<span class="hljs-title function_">write</span>(samplePayload);
+req.<span class="hljs-title function_">end</span>();
+</code></pre>
+<p>To run:</p>
+<pre><code>sudo apt install nodejs
+npm install chalk # coloring
+node client_large_post.js
+</code></pre>
+<h4 id="but-how-does-a-crash-andor-bug-looks-like-in-the-server-log">But, how does a crash and/or bug looks like in the server log?</h4>
+<p>In most of the cases in jCoAP you will see some <code>Exception</code>, Figure 4 shows an example of a bug when sending a mutated <code>PUT</code> request.</p>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706679166/Selection_123_dqtrly.png
+" alt="backtrace" width="1200" height="auto"/>
+</p>
+<p align="center">Figure 4. Crash example view from the server backtrace. </p>
+<p>This is the stack trace of the <code>NullPointerException</code>, showing the sequence of method calls leading to the error. It starts from where the exception was thrown <code>(org.ws4d.coap.core.rest.BasicCoapResource.init)</code> and goes up through the call stack.</p>
+<p>Overall, this backtrace indicates that while running a CoAP server, an error occurred due to a <code>NullPointerException</code> in the <code>BasicCoapResource</code> class at line <code>74</code> during initialization.</p>
+<h3 id="build-coapthon">Build CoAPthon</h3>
+<p>If you choose to setup the python version (have in mind that it is implemented in python 2), you can download the zip file of the code from edimension and set up as follows:</p>
+<pre><code class="language-bash">unzip CoAPthon.zip
+<span class="hljs-built_in">cd</span> CoAPthon/
+python setup.py sdist
+sudo pip install dist/CoAPthon-4.0.2.tar.gz -r requirements.txt
+</code></pre>
+<p><strong>Running:</strong></p>
+<pre><code class="language-bash"><span class="hljs-comment"># install gdb debugger</span>
+sudo apt install gdb
+
+sudo gdb -ex run -ex backtrace --args python2 coapserver.py -i 127.0.0.1 -p 5683 
+
+<span class="hljs-comment"># The server will list various endpoints that are available for </span>
+<span class="hljs-comment"># communication (i,e,./basic)</span>
+</code></pre>
+<p>You will see the <code>gdb</code> debugger information as follows in your terminal once the server is running:</p>
+<pre><code class="language-bash">GNU gdb (Ubuntu 12.1-0ubuntu1~22.04) 12.1
+Copyright (C) 2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type <span class="hljs-string">&quot;show copying&quot;</span> and <span class="hljs-string">&quot;show warranty&quot;</span> <span class="hljs-keyword">for</span> details.
+This GDB was configured as <span class="hljs-string">&quot;x86_64-linux-gnu&quot;</span>.
+Type <span class="hljs-string">&quot;show configuration&quot;</span> <span class="hljs-keyword">for</span> configuration details.
+For bug reporting instructions, please see:
+&lt;https://www.gnu.org/software/gdb/bugs/&gt;.
+Find the GDB manual and other documentation resources online at:
+    &lt;http://www.gnu.org/software/gdb/documentation/&gt;.
+
+For <span class="hljs-built_in">help</span>, <span class="hljs-built_in">type</span> <span class="hljs-string">&quot;help&quot;</span>.
+Type <span class="hljs-string">&quot;apropos word&quot;</span> to search <span class="hljs-keyword">for</span> commands related to <span class="hljs-string">&quot;word&quot;</span>...
+Reading symbols from python2...
+(No debugging symbols found <span class="hljs-keyword">in</span> python2)
+Starting program: /usr/bin/python2 coapserver.py -i 127.0.0.1 -p 5683
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library <span class="hljs-string">&quot;/lib/x86_64-linux-gnu/libthread_db.so.1&quot;</span>.
+[New Thread 0x7ffff6a3e640 (LWP 3993677)]
+CoAP Server start on 127.0.0.1:5683
+[<span class="hljs-string">&#x27;/basic&#x27;</span>, <span class="hljs-string">&#x27;/storage&#x27;</span>, <span class="hljs-string">&#x27;/child&#x27;</span>, <span class="hljs-string">&#x27;/separate&#x27;</span>, <span class="hljs-string">&#x27;/etag&#x27;</span>, <span class="hljs-string">&#x27;/&#x27;</span>, <span class="hljs-string">&#x27;/big&#x27;</span>, <span class="hljs-string">&#x27;/encoding&#x27;</span>, <span class="hljs-string">&#x27;/advancedSeparate&#x27;</span>, <span class="hljs-string">&#x27;/void&#x27;</span>, <span class="hljs-string">&#x27;/advanced&#x27;</span>, <span class="hljs-string">&#x27;/long&#x27;</span>, <span class="hljs-string">&#x27;/xml&#x27;</span>]
+</code></pre>
+<h3 id="creating-a-clientsimple-fuzzer">Creating a client/simple fuzzer</h3>
+<pre><code class="language-python"><span class="hljs-keyword">from</span> coapthon.client.helperclient <span class="hljs-keyword">import</span> HelperClient
+<span class="hljs-keyword">import</span> random
+<span class="hljs-keyword">import</span> string
+
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">CoAPFuzzer</span>:
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, host, port</span>):
+        self.host = host
+        self.port = port
+        self.client = HelperClient(server=(self.host, self.port))
+        self.original_payload = <span class="hljs-string">&quot;Hello, CoAP!&quot;</span>
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fuzz_payload</span>(<span class="hljs-params">self, payload, num_bytes</span>):
+        <span class="hljs-comment"># Generate random bytes to replace part of the payload</span>
+        fuzz_bytes = <span class="hljs-string">&#x27;&#x27;</span>.join(random.choice(string.ascii_letters + string.digits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num_bytes))
+        <span class="hljs-keyword">return</span> payload[:<span class="hljs-number">3</span>] + fuzz_bytes + payload[<span class="hljs-number">3</span> + num_bytes:]
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fuzz_and_send_requests</span>(<span class="hljs-params">self, num_requests, num_bytes</span>):
+        <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num_requests):
+            fuzzed_payload = self.fuzz_payload(self.original_payload, num_bytes)
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Fuzzing payload:&quot;</span>, fuzzed_payload)
+
+            <span class="hljs-comment"># Send fuzzed GET request with the fuzzed payload and path &quot;/basic/&quot;</span>
+            response = self.client.get(<span class="hljs-string">&quot;/basic&quot;</span>, payload=fuzzed_payload)
+            <span class="hljs-built_in">print</span>(response.pretty_print())
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">close_connection</span>(<span class="hljs-params">self</span>):
+        self.client.stop()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():
+    host = <span class="hljs-string">&quot;127.0.0.1&quot;</span>
+    port = <span class="hljs-number">5683</span>
+
+    fuzzer = CoAPFuzzer(host, port)
+    <span class="hljs-comment">#while(1):</span>
+    <span class="hljs-comment">#    try:</span>
+    fuzzer.fuzz_and_send_requests(num_requests=<span class="hljs-number">3</span>, num_bytes=<span class="hljs-number">5</span>)
+    <span class="hljs-comment">#    except:</span>
+    fuzzer.close_connection()
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:
+    main()
+
+</code></pre>
+<p>The ouput of the backtrace should indicate the creation of new threads within the program. Threads are independent sequences of execution within the same process and the threads have exited properly.</p>
+<p>From the <code>simple_fuzzing.py</code> script we can check that we send a first <code>GET</code> request with some random bytes in the payload: <code>HelmkzVQoAP!</code></p>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706587896/Selection_121_bmtcqq.png" alt="backtrace" width="1200" height="auto"/>
+</p>
+<p align="center">Figure 5. Backtrace logs from the server and fuzzing output. </p>
+<p>You can verify that the packet was sent by opening wiereshark and filtering by <code>coap</code> protocol in the filter bar on the top, you can note the highlighted payload in Figure 6.</p>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706587731/Selection_120_bxhasx.png" alt="capture" width="1200" height="auto"/>
+</p>
+<p align="center">Figure 6. Wireshark capture showing the payload of the fuzzed CoAP frame.</p>
+
+            
+            
+        </body>
+        </html>
