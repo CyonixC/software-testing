@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>50&period;053 Software Testing and Verification</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="50053-software-testing-and-verification">50.053 Software Testing and Verification</h1>
+<h2 id="fuzzing-a-django-web-application">Fuzzing a Django Web Application.</h2>
+<h4 id="start-with-docker">Start with <code>Docker</code></h4>
+<h4 id="manual-build">Manual Build</h4>
+<blockquote>
+<p>Download the code</p>
+</blockquote>
+<pre><code class="language-bash">$ unzip DjangoWebApplication.zip
+</code></pre>
+<br />
+<h4 id="-set-up-for-unix-macos">👉 Set Up for <code>Unix</code>, <code>MacOS</code></h4>
+<blockquote>
+<p>Install modules via <code>VENV</code></p>
+</blockquote>
+<pre><code class="language-bash">$ virtualenv <span class="hljs-built_in">env</span> <span class="hljs-comment">#optional</span>
+$ <span class="hljs-built_in">source</span> <span class="hljs-built_in">env</span>/bin/activate <span class="hljs-comment">#optional</span>
+$ pip3 install -r requirements.txt
+</code></pre>
+<br />
+<blockquote>
+<p>Set Up Database</p>
+</blockquote>
+<pre><code class="language-bash">$ python3 manage.py makemigrations
+$ python3 manage.py migrate
+</code></pre>
+<br />
+<blockquote>
+<p>Generate API</p>
+</blockquote>
+<pre><code class="language-bash">$ python3 manage.py generate-api -f
+</code></pre>
+<br />
+<blockquote>
+<p>Start the APP</p>
+</blockquote>
+<pre><code class="language-bash">$ python3 manage.py runserver       <span class="hljs-comment"># start the project</span>
+</code></pre>
+<p>At this point, the app runs at <code>http://127.0.0.1:8000/</code>.</p>
+<br />
+<h4 id="-set-up-for-windows">👉 Set Up for <code>Windows</code></h4>
+<blockquote>
+<p>Install modules via <code>VENV</code> (windows)</p>
+</blockquote>
+<pre><code>$ virtualenv env
+$ .\env\Scripts\activate
+$ pip3 install -r requirements.txt
+</code></pre>
+<br />
+<blockquote>
+<p>Set Up Database</p>
+</blockquote>
+<pre><code class="language-bash">$ python3 manage.py makemigrations
+$ python3 manage.py migrate
+</code></pre>
+<br />
+<blockquote>
+<p>Start the APP</p>
+</blockquote>
+<pre><code class="language-bash">$ python3 manage.py runserver       <span class="hljs-comment"># start the project</span>
+</code></pre>
+<p>At this point, the app runs at <code>http://127.0.0.1:8000/</code>.</p>
+<p align="center">
+  <img src="https://res.cloudinary.com/dxbnpu2rx/image/upload/v1706753169/Selection_125_bsh4wq.png" alt="backtrace" width="1200" height="auto"/>
+</p>
+<p align="center">Figure 1. Web application. </p>
+<h3 id="codebase-structure">Codebase Structure</h3>
+<p>The project is coded using a simple and intuitive structure presented below:</p>
+<pre><code class="language-bash">&lt; PROJECT ROOT &gt;
+   |
+   |-- core/                            
+   |    |-- settings.py                   <span class="hljs-comment"># Project Configuration  </span>
+   |    |-- urls.py                       <span class="hljs-comment"># Project Routing</span>
+   |
+   |-- home/
+   |    |-- views.py                      <span class="hljs-comment"># APP Views </span>
+   |    |-- urls.py                       <span class="hljs-comment"># APP Routing</span>
+   |    |-- models.py                     <span class="hljs-comment"># APP Models </span>
+   |    |-- tests.py                      <span class="hljs-comment"># Tests  </span>
+   |    |-- templates/                    <span class="hljs-comment"># Theme Customisation </span>
+   |         |-- pages                    <span class="hljs-comment"># </span>
+   |              |-- custom-index.py     <span class="hljs-comment"># Custom Dashboard      </span>
+   |
+   |-- requirements.txt                   <span class="hljs-comment"># Project Dependencies</span>
+   |
+   |-- env.sample                         <span class="hljs-comment"># ENV Configuration (default values)</span>
+   |-- manage.py                          <span class="hljs-comment"># Start the app - Django default start script</span>
+   |
+   |-- ************************************************************************
+</code></pre>
+<pre><code class="language-bash"><span class="hljs-comment"># This exists in ENV: LIB/admin_datta</span>
+&lt; UI_LIBRARY_ROOT &gt;                      
+   |
+   |-- templates/                     <span class="hljs-comment"># Root Templates Folder </span>
+   |    |          
+   |    |-- accounts/       
+   |    |    |-- auth-signin.html     <span class="hljs-comment"># Sign IN Page</span>
+   |    |    |-- auth-signup.html     <span class="hljs-comment"># Sign UP Page</span>
+   |    |
+   |    |-- includes/       
+   |    |    |-- footer.html          <span class="hljs-comment"># Footer component</span>
+   |    |    |-- sidebar.html         <span class="hljs-comment"># Sidebar component</span>
+   |    |    |-- navigation.html      <span class="hljs-comment"># Navigation Bar</span>
+   |    |    |-- scripts.html         <span class="hljs-comment"># Scripts Component</span>
+   |    |
+   |    |-- layouts/       
+   |    |    |-- base.html            <span class="hljs-comment"># Masterpage</span>
+   |    |    |-- base-auth.html       <span class="hljs-comment"># Masterpage for Auth Pages</span>
+   |    |
+   |    |-- pages/       
+   |         |-- index.html           <span class="hljs-comment"># Dashboard Page</span>
+   |         |-- profile.html         <span class="hljs-comment"># Profile Page</span>
+   |         |-- *.html               <span class="hljs-comment"># All other pages</span>
+   |    
+   |-- ************************************************************************
+</code></pre>
+<h4 id="sending-requests">Sending requests</h4>
+<p>We provide an example of how you can send a <code>POST</code> request to add a new item to the database. In this case located at <code>datatb/product</code> with the endpoint url
+<code>add/</code>. It is worthy to note that the cookies are optional to include. In this simple example we create a random <code>name</code>, <code>info</code> and <code>price</code>.</p>
+<pre><code>import requests
+import random
+import json
+
+base_url = 'http://127.0.0.1:8000/datatb/product/'
+
+endpoint_url = 'add/'
+
+url = base_url + endpoint_url
+
+random_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', k=10))
+random_info = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', k=10))
+random_price = str(random.randint(1, 100))
+
+form_data = {
+    'name': random_name,
+    'info': random_info,
+    'price': random_price
+}
+
+headers = {
+    'Cookie': 'csrftoken=5vvs6151ScRQGpdMlKAf8FAFERO67MmK; sessionid=c35o5m7xkymbjdtcu9k916f8jfj2f8x7', # Optional
+}
+
+try:
+    print(json.dumps(form_data))
+    response = requests.post(url, headers=headers, data=json.dumps(form_data))
+
+    if response.status_code == 200:
+        print(&quot;Request successful!&quot;)
+        print(&quot;Response:&quot;)
+        print(response.text)
+
+    else:
+        print(f&quot;Request failed with status code: {response.status_code}&quot;)
+except requests.exceptions.RequestException as e:
+    print(&quot;Request failed:&quot;, e)
+
+</code></pre>
+
+            <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+            
+        </body>
+        </html>
