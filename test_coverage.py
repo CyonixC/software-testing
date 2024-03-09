@@ -1,8 +1,9 @@
 import coverage
 import atexit
 import random
+import socket
 
-def main(x: int, y:int):
+def fn(x: int, y:int):
     """Just a random function for demo purposes"""
     if x > y:
         return x
@@ -19,19 +20,35 @@ def main(x: int, y:int):
             return 3
         else:
             return y
-
-def atexit_handler():
-    """Coverage saving must be registered as atexit in case of crashing"""
-    cov.stop()
-    cov.save()
     
-atexit.register(atexit_handler)
+def open_tcp(port_no):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('localhost', port_no))
+    s.listen(1)
+    return s
 
-while True:
-    cov = coverage.Coverage(branch=True)
-    cov.start()
-    x = random.randint(0, 20)
-    y = random.randint(0, 20)
-    main(int(x), int(y))
-    assert False
+def main():
 
+    def atexit_handler():
+        """Coverage saving must be registered as atexit in case of crashing"""
+        cov.stop()
+        cov.save()
+        s.close()
+
+    cov = coverage.Coverage(branch=True, config_file=".coveragearc")
+    s = open_tcp(4345)
+    atexit.register(atexit_handler)
+
+    while True:
+        conn, addr = s.accept()
+        conn.recv(1024)
+        cov.start()
+        x = random.randint(0, 20)
+        y = random.randint(0, 20)
+        fn(int(x), int(y))
+        cov.stop()
+        cov.save()
+        conn.sendall(b'OK')
+
+if __name__ == "__main__":
+    main()
