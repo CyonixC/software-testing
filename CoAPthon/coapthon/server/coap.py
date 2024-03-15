@@ -4,6 +4,8 @@ import random
 import socket
 import struct
 import threading
+import coverage
+import atexit
 
 from coapthon import defines
 from coapthon.layers.blocklayer import BlockLayer
@@ -44,6 +46,12 @@ class CoAP(object):
         :param sock: if a socket has been created externally, it can be used directly
         :param cb_ignore_listen_exception: Callback function to handle exception raised during the socket listen operation
         """
+        self.cov = coverage.Coverage(branch=True, config_file=".coveragerc")
+        def exit_fn():
+            self.cov.stop()
+            self.cov.save()
+        atexit.register(exit_fn)
+
         self.stopped = threading.Event()
         self.stopped.clear()
         self.to_be_stopped = []
@@ -148,6 +156,7 @@ class CoAP(object):
                         continue
                 raise
             try:
+                self.cov.start()
                 serializer = Serializer()
                 message = serializer.deserialize(data, client_address)
                 if isinstance(message, int):
@@ -260,6 +269,9 @@ class CoAP(object):
                 self._unicast_socket.sendto(message, (host, port))
             else:
                 self._socket.sendto(message, (host, port))
+
+            self.cov.stop()
+            self.cov.save()
 
     def add_resource(self, path, resource):
         """
