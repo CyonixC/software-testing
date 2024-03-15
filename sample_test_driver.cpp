@@ -7,12 +7,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "sample_test_driver.h"
 
-int read_coverage(char* shm);
 int run_coverage_shm(char* shm) {
     // Define the server's IP address and port
     const char* SERVER_IP = "127.0.0.1";
     const int SERVER_PORT = 4345;
+    const char* FILENAME = "data/.coverage";
 
     // Create a TCP socket
     int client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -58,16 +59,16 @@ int run_coverage_shm(char* shm) {
     // Close the socket
     close(client_socket);
 
-    read_coverage(shm);
+    hash_cov_into_shm(shm, FILENAME);
 
     return 0;
 }
 
-int read_coverage(char* shm) {
+int hash_cov_into_shm(char* shm, const char* filename) {
     sqlite3 *db;
     char *zErrMsg = 0;
     int rc;
-    rc = sqlite3_open("data/.coverage", &db);
+    rc = sqlite3_open(filename, &db);
     if( rc ) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         return(0);
@@ -87,7 +88,6 @@ int read_coverage(char* shm) {
             int item = sqlite3_column_int(stmt, i);
             crc = update_crc_16(crc, item);
         }
-        // printf("%04x\n", crc);
         printf("Data at index %d: %d\n", crc, shm[crc]);
         shm[crc]++;
     } while (res == SQLITE_ROW);
