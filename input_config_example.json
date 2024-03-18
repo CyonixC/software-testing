@@ -1,0 +1,17 @@
+{
+    "choice_folder": "choice_example",
+    "launch_script": "launch_example.sh",
+    "seed_folder": "seed_example",
+    "fields": {
+        "example_1": {
+            "min_length": 4,
+            "max_length": 10,
+            "use_choices": false
+        },
+        "example_2": {
+            "min_length": 11,
+            "max_length": 11,
+            "use_choices": true
+        }
+    }
+}
