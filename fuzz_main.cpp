@@ -160,3 +160,9 @@ bool isInteresting(char* data) {
 
     return is_interesting;
 }
+
+void assignEnergy(Input& input) {
+    // Just assign constant energy
+    const int ENERGY = 100;
+    input.energy = ENERGY;
+}
