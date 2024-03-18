@@ -9,16 +9,17 @@
 #include <sys/wait.h>
 #include "sample_test_driver.h"
 #include <cstring>
+#include "inputs.h"
 
 using namespace std;
 
 pid_t run_py();
 int run_driver(char* shm);
+const int SIZE = 65536;
+key_t key = 654;
 
 int main() {
     // Shared memory key
-    key_t key = 654;
-    const int SIZE = 65536;
 
     // Create shared memory segment
     int shmid = shmget(key, SIZE, 0666|IPC_CREAT);
@@ -68,8 +69,6 @@ int main() {
     }
 
     kill(pid, SIGTERM); // Kill the Python server
-    
-
 }
 
 int run_driver(char* shm) {
@@ -119,4 +118,45 @@ pid_t run_py() {
         // Wait for the child process to finish
     }
     return pid;
+}
+
+bool isInteresting(char* data) {
+    // This is a mirror of the array produced by the coverage tool
+    // to track which branches have been taken
+
+    // Each char element contains the bucket count of the number of times
+    // a branch has been taken.
+    static char* tracking = new char[SIZE]();
+
+    // Bucketing branch transition counts
+    bool is_interesting = false;
+    for (int i = 0; i < SIZE; i++) {
+        if (data[i] >= 128 && tracking[i] >> 7 == 0) {
+            tracking[i] |= 0b10000000;
+            is_interesting = true;
+        } else if (data[i] >= 32 && (tracking[i] >> 6) % 2 == 0) {
+            tracking[i] |= 0b01000000;
+            is_interesting = true;
+        } else if (data[i] >= 16 && (tracking[i] >> 5) % 2 == 0) {
+            tracking[i] |= 0b00100000;
+            is_interesting = true;
+        } else if (data[i] >= 8 && (tracking[i] >> 4) % 2 == 0) {
+            tracking[i] |= 0b00010000;
+            is_interesting = true;
+        } else if (data[i] >= 4 && (tracking[i] >> 3) % 2 == 0) {
+            tracking[i] |= 0b00001000;
+            is_interesting = true;
+        } else if (data[i] == 3 && (tracking[i] >> 2) % 2 == 0) {
+            tracking[i] |= 0b00000100;
+            is_interesting = true;
+        } else if (data[i] == 2 && (tracking[i] >> 1) % 2 == 0) {
+            tracking[i] |= 0b00000010;
+            is_interesting = true;
+        } else if (data[i] == 1 && tracking[i] % 2 == 0) {
+            tracking[i] |= 0b00000001;
+            is_interesting = true;
+        }
+    }
+
+    return is_interesting;
 }
