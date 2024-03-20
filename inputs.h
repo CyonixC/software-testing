@@ -13,3 +13,9 @@ typedef struct {
     std::vector<std::byte> data;
     unsigned int energy;
 } Input;
+
+enum class FieldTypes {
+    STRING,
+    INTEGER,
+    BINARY
+};

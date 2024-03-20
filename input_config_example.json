@@ -6,12 +6,13 @@
         "example_1": {
             "min_length": 4,
             "max_length": 10,
-            "use_choices": false
+            "choice_type": "string",
+            "choices": ["test1", "test2", "test3", "test4"]
         },
         "example_2": {
-            "min_length": 11,
             "max_length": 11,
-            "use_choices": true
+            "choice_type": "integer",
+            "choices": [12345, 23456, 34567]
         }
     }
 }

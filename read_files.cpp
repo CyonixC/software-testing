@@ -3,6 +3,7 @@
 #include <filesystem>   // For file paths
 #include <fstream>  // For reading files
 #include <iostream> // For some basic debugging
+#include <limits.h> // For UINT_MAX
 #include "json.hpp"
 #include "inputs.h"
 
@@ -49,32 +50,69 @@ std::vector<Field> readFields(const json& j) {
     for (auto &it : json_fields.items()) {
         json field_conf = it.value();
         Field f;
-        f.minLen = field_conf["min_length"];
-        f.maxLen = field_conf["max_length"];
+        
+        // Assign min and max length values, if they exist
+        if (field_conf.contains("min_length")) {
+            f.minLen = field_conf["min_length"];
+        } else {
+            f.minLen = 0;
+        }
+
+        if (field_conf.contains("max_length")) {
+            f.maxLen = field_conf["max_length"];
+        } else {
+            f.maxLen = UINT_MAX;
+        }
 
         // If the field uses choices, read the choices from the file
-        if (field_conf["use_choices"]) {
+        if (field_conf.contains("choices")) {
 
-            // If the file is not found, throw an error
-            if (p == "") {
-                throw std::runtime_error("There is a field that uses choices, but no choice_folder is specified in the JSON");
+            FieldTypes type;
+            // Check the type of the choices
+            if (field_conf["choice_type"] == "string") {
+                type = FieldTypes::STRING;
+            } else if (field_conf["choice_type"] == "integer") {
+                type = FieldTypes::INTEGER;
+            } else if (field_conf["choice_type"] == "binary") {
+                type = FieldTypes::BINARY;
+            } else {
+                throw std::runtime_error("Invalid choice type");
             }
 
-            // Read the files and store the choices
-            f.validChoices = readChoices(p/fs::path(it.key()));
+            json choices = field_conf["choices"];
+
+            for (auto &it : choices.items()) {
+                // Read the items
+                switch (type) {
+                case FieldTypes::STRING: 
+                {
+                    std::string val = it.value().get<std::string>();
+                    std::vector<std::byte> vec;
+                    for (char c : val)  
+                        vec.push_back(static_cast<std::byte>(c));
+
+                    f.validChoices.push_back(vec);
+                    break;
+                }
+                case FieldTypes::INTEGER:
+                {
+                    int val = it.value().get<int>();
+                    f.validChoices.push_back(std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int)));
+                    break;
+                }
+                case FieldTypes::BINARY:
+                {
+                    throw std::runtime_error("Binary choices not yet implemented");
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
         }
         fields.push_back(f);
     }
     return fields;
-}
-
-std::vector<Input> readSeed(const fs::path& filepath) {
-    std::vector<Input> inputs;
-    // std::ifstream file(filepath);
-    // json j = json::parse(file);
-    // for (auto &it : j.items()) {
-    // }
-    return inputs;
 }
 
 int main() {
@@ -88,7 +126,7 @@ int main() {
         std::cout << "Choices: " << std::endl;
         for (std::vector<std::byte> choice : f.validChoices) {
             for (std::byte c : choice) {
-                std::cout << static_cast<char>(c);
+                std::cout << static_cast<char>(c) << std::endl;
             }
             std::cout << std::endl;
         }
