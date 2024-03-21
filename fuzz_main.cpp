@@ -12,6 +12,7 @@
 #include "inputs.h"
 #include <random>
 #include <iostream>
+#include "read_files.h"
 
 template<typename T>
 T random_int(T min, T max) {
@@ -23,30 +24,13 @@ T random_int(T min, T max) {
 
 using namespace std;
 
-pid_t run_py();
-int run_driver(char* shm);
 const int SIZE = 65536;
-key_t key = 654;
+pid_t run_py();
+int run_driver(std::array<char, SIZE> &shm);
 
 int main() {
-    // Shared memory key
-
-    // Create shared memory segment
-    int shmid = shmget(key, SIZE, 0666|IPC_CREAT);
-    if (shmid == -1) {
-        perror("shmget");
-        return 1;
-    }
-
-    // Attach shared memory segment to parent process
-    char* data = (char*) shmat(shmid, NULL, 0);
-    if (data == (char *)(-1)) {
-        perror("shmat");
-        return 1;
-    }
-
-    // Zero out the shared memory segment
-    memset(data, 0, SIZE);
+    // Initialise the coverage measurement buffer
+    std::array<char, SIZE> coverage{};
 
     // Run the coverage Python script to generate the .coverage file
     // This is a stand-in for the actual server, and is just listening for connections on 4345.
@@ -66,44 +50,12 @@ int main() {
         memset(data, 0, SIZE);
 
     }
-    // Detach shared memory segment from parent process
-    if (shmdt(data) == -1) {
-        perror("shmdt");
-        return 1;
-    }
-    
-    // Mark shared memory segment for deletion
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("shmctl");
-        return 1;
-    }
-
     kill(pid, SIGTERM); // Kill the Python server
 }
 
-int run_driver(char* shm) {
+int run_driver(array<char, SIZE> &shm) {
 
-    pid_t pid = fork();
-
-    if (pid == -1) {
-        // Error occurred
-        std::cerr << "Failed to fork" << std::endl;
-        return 1;
-    } else if (pid == 0) {
-        // Child process
-
-        // Run the driver
-        run_coverage_shm(shm);
-        if (shmdt(shm) == -1) {
-            perror("shmdt");
-            return 1;
-        }
-    } else {
-        // Parent process
-        // Wait for the child process to finish
-        waitpid(pid, NULL, 0);
-        std::cout << "Driver finished" << std::endl;
-    }
+    run_coverage_shm(shm);
     return 0;
 
 }
