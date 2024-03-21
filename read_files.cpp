@@ -58,6 +58,8 @@ std::vector<Field> readFields(const json& j) {
             throw std::runtime_error("Invalid choice type");
         }
 
+        f.type = type;
+
         // If the field uses choices, read the choices from the file
         if (field_conf.contains("choices")) {
             json choices = field_conf["choices"];
@@ -108,7 +110,7 @@ InputSeed readSeed(const json &j, std::vector<Field> &fields) {
         switch (type) {
             case FieldTypes::STRING: 
             {
-                std::string val = j[f.name]["data"].get<std::string>();
+                std::string val = j[f.name].get<std::string>();
                 std::vector<std::byte> vec;
                 for (char c : val)  
                     vec.push_back(static_cast<std::byte>(c));
@@ -118,7 +120,7 @@ InputSeed readSeed(const json &j, std::vector<Field> &fields) {
             }
             case FieldTypes::INTEGER:
             {
-                int val = j[f.name]["data"].get<int>();
+                int val = j[f.name].get<int>();
                 inp.data = std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int));
                 break;
             }
