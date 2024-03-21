@@ -10,7 +10,7 @@
 #include "sample_test_driver.h"
 #include <array>
 
-int run_coverage_shm(std::array<char, SIZE> shm) {
+int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
     // Define the server's IP address and port
     const char* SERVER_IP = "127.0.0.1";
     const int SERVER_PORT = 4345;
@@ -38,13 +38,17 @@ int run_coverage_shm(std::array<char, SIZE> shm) {
     std::cout << "Connected to the server.\n";
 
     // Send data to the server
-    const char* message = "Ping";
-    if (send(client_socket, message, strlen(message), 0) == -1) {
+    if (send(client_socket, &a, 1, 0) == -1) {
         std::cerr << "Error: Failed to send data\n";
         close(client_socket);
         return 1;
     }
-    std::cout << "Sent: " << message << std::endl;
+    if (send(client_socket, &b, 1, 0) == -1) {
+        std::cerr << "Error: Failed to send data\n";
+        close(client_socket);
+        return 1;
+    }
+    std::cout << "Sent: " << a << " " << b << std::endl;
 
     // Receive data from the server
     char buffer[1024];
