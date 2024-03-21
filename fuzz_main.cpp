@@ -80,6 +80,8 @@ int main() {
             }
 
         }
+        seedQueue.emplace(i);
+        break;
 
     }
     kill(pid, SIGTERM); // Kill the Python server

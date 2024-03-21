@@ -41,8 +41,8 @@ def main():
 
     while True:
         conn, addr = s.accept()
-        x = int.from_bytes(conn.recv(4))
-        y = int.from_bytes(conn.recv(4))
+        x = int.from_bytes(conn.recv(1), "little")
+        y = int.from_bytes(conn.recv(1), "little")
         cov.start()
         fn(int(x), int(y))
         cov.stop()
