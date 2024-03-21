@@ -46,21 +46,20 @@ std::vector<Field> readFields(const json& j) {
 
         f.name = it.key();
 
+        FieldTypes type;
+        // Check the type of the choices
+        if (field_conf["type"] == "string") {
+            type = FieldTypes::STRING;
+        } else if (field_conf["type"] == "integer") {
+            type = FieldTypes::INTEGER;
+        } else if (field_conf["type"] == "binary") {
+            type = FieldTypes::BINARY;
+        } else {
+            throw std::runtime_error("Invalid choice type");
+        }
+
         // If the field uses choices, read the choices from the file
         if (field_conf.contains("choices")) {
-
-            FieldTypes type;
-            // Check the type of the choices
-            if (field_conf["choice_type"] == "string") {
-                type = FieldTypes::STRING;
-            } else if (field_conf["choice_type"] == "integer") {
-                type = FieldTypes::INTEGER;
-            } else if (field_conf["choice_type"] == "binary") {
-                type = FieldTypes::BINARY;
-            } else {
-                throw std::runtime_error("Invalid choice type");
-            }
-
             json choices = field_conf["choices"];
 
             for (auto &it : choices.items()) {
@@ -136,21 +135,21 @@ InputSeed readSeed(const json &j, std::vector<Field> &fields) {
     return ret;
 }
 
-int main() {
-    std::string config_file = "input_config_example.json";
-    std::ifstream file(config_file);
-    json j = json::parse(file);
-    std::vector<Field> fields = readFields(j);
-    for (Field f : fields) {
-        std::cout << "Min length: " << f.minLen << std::endl;
-        std::cout << "Max length: " << f.maxLen << std::endl;
-        std::cout << "Choices: " << std::endl;
-        for (std::vector<std::byte> choice : f.validChoices) {
-            for (std::byte c : choice) {
-                std::cout << static_cast<char>(c) << std::endl;
-            }
-            std::cout << std::endl;
-        }
-    }
-    return 0;
-}
+// int main() {
+//     std::string config_file = "input_config_example.json";
+//     std::ifstream file(config_file);
+//     json j = json::parse(file);
+//     std::vector<Field> fields = readFields(j);
+//     for (Field f : fields) {
+//         std::cout << "Min length: " << f.minLen << std::endl;
+//         std::cout << "Max length: " << f.maxLen << std::endl;
+//         std::cout << "Choices: " << std::endl;
+//         for (std::vector<std::byte> choice : f.validChoices) {
+//             for (std::byte c : choice) {
+//                 std::cout << static_cast<char>(c) << std::endl;
+//             }
+//             std::cout << std::endl;
+//         }
+//     }
+//     return 0;
+// }
