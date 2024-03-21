@@ -44,7 +44,7 @@ std::vector<Field> readFields(const json& j) {
             f.maxLen = UINT_MAX;
         }
 
-        f.
+        f.name = it.key();
 
         // If the field uses choices, read the choices from the file
         if (field_conf.contains("choices")) {
@@ -97,14 +97,14 @@ std::vector<Field> readFields(const json& j) {
     return fields;
 }
 
-std::vector<Input> readSeed(const json &j, std::vector<Field> &fields) {
-    std::vector<Input> ret;
+InputSeed readSeed(const json &j, std::vector<Field> &fields) {
+    InputSeed ret;
+    ret.energy = 10;
     for (Field f : fields) {
         if (!j.contains(f.name))
             throw std::runtime_error("Seed does not contain required field value");
-        Input inp;
+        InputField inp;
         inp.format = f;
-        inp.energy = 0;
         FieldTypes type =  f.type;
         switch (type) {
             case FieldTypes::STRING: 
@@ -131,7 +131,7 @@ std::vector<Input> readSeed(const json &j, std::vector<Field> &fields) {
             default:
                 break;
         }
-        ret.push_back(inp);
+        ret.inputs.push_back(inp);
     }
     return ret;
 }
