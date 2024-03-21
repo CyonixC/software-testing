@@ -10,6 +10,16 @@
 #include "sample_test_driver.h"
 #include <cstring>
 #include "inputs.h"
+#include <random>
+#include <iostream>
+
+template<typename T>
+T random_int(T min, T max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<T> dis(min, max);
+    return dis(gen);
+}
 
 using namespace std;
 
@@ -165,4 +175,21 @@ void assignEnergy(Input& input) {
     // Just assign constant energy
     const int ENERGY = 100;
     input.energy = ENERGY;
+}
+void mutate(Input& input) {
+    if (input.data.empty()) return; // Check if there's data to mutate
+
+    // Decide how many bytes to mutate based on the size of the data
+    size_t mutationsCount = random_int<size_t>(1, input.data.size() / 2);
+
+    for (size_t i = 0; i < mutationsCount; ++i) {
+        // Pick a random byte to mutate
+        size_t index = random_int<size_t>(0, input.data.size() - 1);
+
+        // Generate a new random byte and replace the chosen byte
+        std::byte newValue = static_cast<std::byte>(random_int<int>(0, 255));
+        input.data[index] = newValue;
+    }
+
+    std::cout << "Mutated " << mutationsCount << " bytes." << std::endl;
 }
