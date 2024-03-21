@@ -19,5 +19,9 @@ typedef struct {
 typedef struct {
     Field format;
     std::vector<std::byte> data;
+} InputField;
+
+typedef struct {
+    std::vector<InputField> inputs;
     unsigned int energy;
-} Input;
+} InputSeed;
