@@ -4,11 +4,10 @@
     "seed_folder": "seed_example",
     "fields": {
         "a": {
-            "choice_type": "integer",
-            "choices": [123, 23, 45]
+            "type": "integer"
         },
         "b": {
-            "choice_type": "integer"
+            "type": "integer"
         }
     }
 }
