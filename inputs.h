@@ -21,4 +21,3 @@ typedef struct {
     std::vector<std::byte> data;
     unsigned int energy;
 } Input;
-

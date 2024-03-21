@@ -1,0 +1,18 @@
+{
+    "choice_folder": "choice_example",
+    "launch_script": "launch_example.sh",
+    "seed_folder": "seed_example",
+    "fields": {
+        "example_1": {
+            "min_length": 4,
+            "max_length": 10,
+            "choice_type": "string",
+            "choices": ["test1", "test2", "test3", "test4"]
+        },
+        "example_2": {
+            "max_length": 11,
+            "choice_type": "integer",
+            "choices": [12345, 23456, 34567]
+        }
+    }
+}

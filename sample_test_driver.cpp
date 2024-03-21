@@ -8,8 +8,9 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "sample_test_driver.h"
+#include <array>
 
-int run_coverage_shm(char* shm) {
+int run_coverage_shm(std::array<char, SIZE> shm) {
     // Define the server's IP address and port
     const char* SERVER_IP = "127.0.0.1";
     const int SERVER_PORT = 4345;
@@ -64,7 +65,7 @@ int run_coverage_shm(char* shm) {
     return 0;
 }
 
-int hash_cov_into_shm(char* shm, const char* filename) {
+int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
     sqlite3 *db;
     char *zErrMsg = 0;
     int rc;
