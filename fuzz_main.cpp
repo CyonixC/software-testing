@@ -14,6 +14,9 @@
 #include <iostream>
 #include "read_files.h"
 
+const char* config_file = "input_config_example.json";
+const char* seed_file = "seed_file_example.json";
+
 template<typename T>
 T random_int(T min, T max) {
     static std::random_device rd;
@@ -30,7 +33,7 @@ int run_driver(std::array<char, SIZE> &shm);
 
 int main() {
     // Initialise the coverage measurement buffer
-    std::array<char, SIZE> coverage{};
+    std::array<char, SIZE> coverage_arr{};
 
     // Run the coverage Python script to generate the .coverage file
     // This is a stand-in for the actual server, and is just listening for connections on 4345.
@@ -40,14 +43,16 @@ int main() {
 
     for (int i = 0; i < 10; i++) {
         // Run the driver a few times
-        run_driver(data);
+        run_driver(coverage_arr);
         for (int j = 0; j < SIZE; j++) {
-            if (data[j] != 0) {
-                printf("Data at index %d: %d\n", j, data[j]);
+            if (coverage_arr[j] != 0) {
+                printf("Data at index %d: %d\n", j, coverage_arr[j]);
             }
         }
-        // Zero out the shared memory segment
-        memset(data, 0, SIZE);
+        // Zero out the coverage array
+        for (auto &elem : coverage_arr) {
+            elem = 0;
+        }
 
     }
     kill(pid, SIGTERM); // Kill the Python server
