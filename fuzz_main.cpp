@@ -31,7 +31,9 @@ T random_int(T min, T max) {
 using namespace std;
 
 pid_t run_py();
-int run_driver(std::array<char, SIZE> &shm);
+int run_driver(array<char, SIZE> &shm, InputSeed input);
+InputSeed mutateSeed(InputSeed seed);
+bool isInteresting(std::array<char, SIZE> data);
 
 int main() {
     // Initialise the coverage measurement buffer
@@ -42,7 +44,7 @@ int main() {
 
     // Read the config file
     std::ifstream file{config_file};
-    json config = json::parse(config_file);
+    json config = json::parse(file);
     std::vector<Field> fields = readFields(config);
 
     // Read the seed file
@@ -63,12 +65,15 @@ int main() {
         seedQueue.pop();
 
         for (int j = 0; j < i.energy; j++) {
+            InputSeed mutated = mutateSeed(i);
         
             // Run the driver a few times
-            run_driver(coverage_arr, i);
+            run_driver(coverage_arr, mutated);
             if (isInteresting(coverage_arr)) {
-                seedQueue.emplace(i);
+                seedQueue.emplace(mutated);
+                std::cout << "Interesting: " << static_cast<char>(mutated.inputs[0].data[0]) << ", " << static_cast<char>(mutated.inputs[1].data[0]) << std::endl;
             }
+
             // Zero out the coverage array
             for (auto &elem : coverage_arr) {
                 elem = 0;
@@ -189,6 +194,7 @@ void mutate(InputField& input) {
 
     std::cout << "Mutated " << mutationsCount << " bytes." << std::endl;
 }
+
 InputSeed mutateSeed(InputSeed seed) {
     // Copies
     for (auto &elem : seed.inputs) {
