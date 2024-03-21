@@ -12,26 +12,6 @@ namespace fs = std::filesystem;
 
 
 /**
- * @brief Read the choices from a folder.
- * @details The folder is expected to contain n files for n possible choices.
- * @param p The path to the folder to read from.
-*/
-std::vector<std::vector<std::byte>> readChoices(const fs::path& p) {
-    std::vector<std::vector<std::byte>> choices;
-    char c;
-    for (const auto& entry : fs::directory_iterator(p)) {
-        std::ifstream file(entry.path(), std::ios::binary);
-        std::vector<std::byte> choice;
-        while (file.get(c))
-            choice.push_back(static_cast<std::byte>(c));
-        choices.push_back(choice);
-        file.close();
-        }
-
-    return choices;
-}
-
-/**
  * @brief Read the fields from the config JSON.
  * @details The JSON is expected to have a "fields" key, which is an 
  * array of expected outputs from the fuzzer.
@@ -113,6 +93,45 @@ std::vector<Field> readFields(const json& j) {
         fields.push_back(f);
     }
     return fields;
+}
+
+std::vector<Input> readSeed(const json &j, std::vector<Field> &fields) {
+    std::vector<Input> ret;
+    for (Field f : fields) {
+        if (!j.contains(f.name))
+            throw std::runtime_error("Seed does not contain required field value");
+        Input inp;
+        inp.format = f;
+        inp.energy = 0;
+        FieldTypes type =  f.type;
+        switch (type) {
+            case FieldTypes::STRING: 
+            {
+                std::string val = j[f.name]["data"].get<std::string>();
+                std::vector<std::byte> vec;
+                for (char c : val)  
+                    vec.push_back(static_cast<std::byte>(c));
+
+                inp.data = vec;
+                break;
+            }
+            case FieldTypes::INTEGER:
+            {
+                int val = j[f.name]["data"].get<int>();
+                inp.data = std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int));
+                break;
+            }
+            case FieldTypes::BINARY:
+            {
+                throw std::runtime_error("Binary choices not yet implemented");
+                break;
+            }
+            default:
+                break;
+        }
+        ret.push_back(inp);
+    }
+    return ret;
 }
 
 int main() {
