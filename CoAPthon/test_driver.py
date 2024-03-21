@@ -17,7 +17,7 @@ def send_coap_request(client, method, path, payload=None):
         else:
             print("Unsupported method: %s" % method, file=sys.stderr)
             return False
--
+
         if response is not None:
             print(response)
             return True
@@ -39,6 +39,7 @@ def fuzz_coap(input_data):
     
     method = lines[0].strip()
     path = lines[1].strip()
+    print(path)
     payload = "\n".join(lines[2:]) if len(lines) > 2 else None
     print(payload)
 
