@@ -1,12 +1,16 @@
 #pragma once
 #include <vector>
 #include <cstddef>
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 enum class FieldTypes {
     STRING,
     INTEGER,
     BINARY
 };
+
 
 typedef struct {
     unsigned int minLen;
@@ -24,4 +28,5 @@ typedef struct {
 typedef struct {
     std::vector<InputField> inputs;
     unsigned int energy;
+    json to_json() const;
 } InputSeed;
