@@ -1,14 +1,54 @@
+#include <arpa/inet.h>
+#include <array>
+#include <cstring>
+#include <iostream>
+#include <netinet/in.h>
 #include <sqlite3.h>
 #include <stdio.h>
-#include "checksum.h"
-#include <iostream>
-#include <cstring>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include "sample_test_driver.h"
-#include <array>
+
+#include "checksum.h"
+#include "inputs.h"
+#include "sample_program.h"
+
+pid_t run_server() {
+
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "Failed to fork" << std::endl;
+        return 0;
+    } else if (pid == 0) {
+
+        // Child process
+        char* args[] = {(char*)"python", (char*)"test_coverage.py", NULL};
+        execvp(args[0], args);
+        // If execvp returns, an error occurred
+        std::cerr << "Failed to execute Python script" << std::endl;
+        return 0;
+
+    } else {
+        // Parent process
+        // Wait for the child process to finish
+    }
+    return pid;
+}
+
+int run_driver(std::array<char, SIZE> &shm, InputSeed input) {
+    char a;
+    char b;
+    for (auto &elem : input.inputs) {
+        if (elem.format.name == "a") {
+            a = static_cast<char>(elem.data[0]);
+        }
+        if (elem.format.name == "b") {
+            b = static_cast<char>(elem.data[0]);
+        }
+    }
+    run_coverage_shm(shm, a, b);
+    return 0;
+}
 
 int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
     // Define the server's IP address and port
@@ -99,4 +139,3 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
     sqlite3_close(db);
     return 0;
 }
-
