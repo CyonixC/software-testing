@@ -1,21 +1,17 @@
-#include <stdio.h>
-#include <iostream>
-#include <filesystem>
-#include <unistd.h> // For fork(), execvp()
-#include <sys/wait.h> // For waitpid()
-#include <iostream>
-#include <unistd.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
-#include "sample_test_driver.h"
-#include <cstring>
-#include "inputs.h"
-#include <random>
-#include <iostream>
-#include "read_files.h"
 #include <array>
-#include <queue>
+#include <cstring>
+#include <filesystem>
 #include <fstream>  // ifstream
+#include <iostream>
+#include <queue>
+#include <random>
+#include <stdio.h>
+#include <sys/wait.h> // For waitpid()
+#include <unistd.h> // For fork(), execvp()
+
+#include "config.h"
+#include "inputs.h"
+#include "sample_program.h"
 
 const std::string config_file = "input_config_example.json";
 const std::string seed_file = "seed_file_example.json";
@@ -30,7 +26,6 @@ T random_int(T min, T max) {
 
 using namespace std;
 
-pid_t run_py();
 int run_driver(array<char, SIZE> &shm, InputSeed input);
 InputSeed mutateSeed(InputSeed seed);
 bool isInteresting(std::array<char, SIZE> data);
@@ -56,7 +51,7 @@ int main() {
     
     // Run the coverage Python script to generate the .coverage file
     // This is a stand-in for the actual server, and is just listening for connections on 4345.
-    pid_t pid = run_py();
+    pid_t pid = run_server();
     printf("Python server started\n");
     sleep(1); // Wait for the server to start, on actual should probably use a signal or something
 
@@ -87,42 +82,7 @@ int main() {
     kill(pid, SIGTERM); // Kill the Python server
 }
 
-int run_driver(array<char, SIZE> &shm, InputSeed input) {
-    char a;
-    char b;
-    for (auto &elem : input.inputs) {
-        if (elem.format.name == "a") {
-            a = static_cast<char>(elem.data[0]);
-        }
-        if (elem.format.name == "b") {
-            b = static_cast<char>(elem.data[0]);
-        }
-    }
-    run_coverage_shm(shm, a, b);
-    return 0;
-}
 
-pid_t run_py() {
-
-    pid_t pid = fork();
-
-    if (pid == -1) {
-        // Error occurred
-        std::cerr << "Failed to fork" << std::endl;
-        return 0;
-    } else if (pid == 0) {
-        // Child process
-        char* args[] = {(char*)"python", (char*)"test_coverage.py", NULL};
-        execvp(args[0], args);
-        // If execvp returns, an error occurred
-        std::cerr << "Failed to execute Python script" << std::endl;
-        return 0;
-    } else {
-        // Parent process
-        // Wait for the child process to finish
-    }
-    return pid;
-}
 
 bool isInteresting(std::array<char, SIZE> data) {
     // This is a mirror of the array produced by the coverage tool
@@ -173,11 +133,11 @@ bool isInteresting(std::array<char, SIZE> data) {
     return is_interesting;
 }
 
-// void assignEnergy(Input& input) {
-//     // Just assign constant energy
-//     const int ENERGY = 100;
-//     input.energy = ENERGY;
-// }
+void assignEnergy(InputSeed& input) {
+    // Just assign constant energy
+    const int ENERGY = 100;
+    input.energy = ENERGY;
+}
 
 void mutate(InputField& input) {
     if (input.data.empty()) return; // Check if there's data to mutate
@@ -194,7 +154,6 @@ void mutate(InputField& input) {
         input.data[index] = newValue;
     }
 
-    std::cout << "Mutated " << mutationsCount << " bytes." << std::endl;
 }
 
 InputSeed mutateSeed(InputSeed seed) {
