@@ -46,9 +46,7 @@ int main() {
     const fs::path seed_folder{config["seed_folder"]};
 
     // Create output folder
-    if (!fs::create_directories(output_directory)) {
-        throw std::runtime_error("Couldn't create output folder");
-    }
+    fs::create_directories(output_directory);
 
     // Read the seed file
     for (auto const& seed_file : fs::directory_iterator{seed_folder}) {
@@ -65,6 +63,8 @@ int main() {
     printf("Server started\n");
     sleep(1); // Wait for the server to start, on actual should probably use a signal or something
 
+    unsigned int interesting_count = 0;
+
     while (true) {
         InputSeed i = seedQueue.front();
         seedQueue.pop();
@@ -77,6 +77,14 @@ int main() {
             if (isInteresting(coverage_arr)) {
                 seedQueue.emplace(mutated);
                 std::cout << "Interesting: " << mutated.to_json() << std::endl;
+                
+                // Output interesting input as a file in the output directory
+                std::ostringstream filename;
+                filename << "input" << interesting_count << ".json";
+                fs::path output_path{output_directory / filename.str()};
+                std::ofstream output_file{output_path};
+                output_file << std::setw(4) << mutated.to_json() << std::endl;
+                interesting_count++;
             }
 
             // Zero out the coverage array
@@ -86,7 +94,6 @@ int main() {
 
         }
         seedQueue.emplace(i);
-        break;
 
     }
     kill(pid, SIGTERM); // Kill the Python server
@@ -107,35 +114,35 @@ bool isInteresting(std::array<char, SIZE> data) {
     for (int i = 0; i < SIZE; i++) {
         if (data[i] >= 128 && tracking[i] >> 7 == 0) {
             tracking[i] |= 0b10000000;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 32 && (tracking[i] >> 6) % 2 == 0) {
             tracking[i] |= 0b01000000;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 16 && (tracking[i] >> 5) % 2 == 0) {
             tracking[i] |= 0b00100000;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 8 && (tracking[i] >> 4) % 2 == 0) {
             tracking[i] |= 0b00010000;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 4 && (tracking[i] >> 3) % 2 == 0) {
             tracking[i] |= 0b00001000;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 3 && (tracking[i] >> 2) % 2 == 0) {
             tracking[i] |= 0b00000100;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 2 && (tracking[i] >> 1) % 2 == 0) {
             tracking[i] |= 0b00000010;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 1 && tracking[i] % 2 == 0) {
             tracking[i] |= 0b00000001;
-            std::cout << "new path: " << i << std::endl;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         }
     }
