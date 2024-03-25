@@ -28,9 +28,6 @@ pid_t run_server() {
         std::cerr << "Failed to execute Python script" << std::endl;
         return 0;
 
-    } else {
-        // Parent process
-        // Wait for the child process to finish
     }
     return pid;
 }
