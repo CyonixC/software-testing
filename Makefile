@@ -1,9 +1,7 @@
 OUTPUT_FOLDER = bin
 
 ifdef DEBUG
-	DEBUG_FLAG = "-g -DDEBUG"
-else
-	DEBUG_FLAG = ""
+	DEBUG_FLAG = -g -DDEBUG
 endif
 
 main_fuzz: fuzz_main.cpp inputs.cpp crc16.c sample_program.cpp config.cpp $(OUTPUT_FOLDER)
