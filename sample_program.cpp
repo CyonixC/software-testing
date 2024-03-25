@@ -1,16 +1,53 @@
+#include <arpa/inet.h>
+#include <array>
+#include <cstring>
+#include <iostream>
+#include <netinet/in.h>
 #include <sqlite3.h>
 #include <stdio.h>
-#include "checksum.h"
-#include <iostream>
-#include <cstring>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include "sample_test_driver.h"
-#include <array>
 
-int run_coverage_shm(std::array<char, SIZE> shm) {
+#include "checksum.h"
+#include "inputs.h"
+#include "sample_program.h"
+
+pid_t run_server() {
+
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "Failed to fork" << std::endl;
+        return 0;
+    } else if (pid == 0) {
+
+        // Child process
+        char* args[] = {(char*)"python", (char*)"test_coverage.py", NULL};
+        execvp(args[0], args);
+        // If execvp returns, an error occurred
+        std::cerr << "Failed to execute Python script" << std::endl;
+        return 0;
+
+    }
+    return pid;
+}
+
+int run_driver(std::array<char, SIZE> &shm, InputSeed input) {
+    char a;
+    char b;
+    for (auto &elem : input.inputs) {
+        if (elem.format.name == "a") {
+            a = static_cast<char>(elem.data[0]);
+        }
+        if (elem.format.name == "b") {
+            b = static_cast<char>(elem.data[0]);
+        }
+    }
+    run_coverage_shm(shm, a, b);
+    return 0;
+}
+
+int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
     // Define the server's IP address and port
     const char* SERVER_IP = "127.0.0.1";
     const int SERVER_PORT = 4345;
@@ -35,16 +72,20 @@ int run_coverage_shm(std::array<char, SIZE> shm) {
         close(client_socket);
         return 1;
     }
-    std::cout << "Connected to the server.\n";
+    // std::cout << "Connected to the server.\n";
 
     // Send data to the server
-    const char* message = "Ping";
-    if (send(client_socket, message, strlen(message), 0) == -1) {
+    if (send(client_socket, &a, 1, 0) == -1) {
         std::cerr << "Error: Failed to send data\n";
         close(client_socket);
         return 1;
     }
-    std::cout << "Sent: " << message << std::endl;
+    if (send(client_socket, &b, 1, 0) == -1) {
+        std::cerr << "Error: Failed to send data\n";
+        close(client_socket);
+        return 1;
+    }
+    // std::cout << "Sent: " << a << " " << b << std::endl;
 
     // Receive data from the server
     char buffer[1024];
@@ -55,7 +96,7 @@ int run_coverage_shm(std::array<char, SIZE> shm) {
         return 1;
     }
     buffer[bytes_received] = '\0';
-    std::cout << "Received: " << buffer << std::endl;
+    // std::cout << "Received: " << buffer << std::endl;
 
     // Close the socket
     close(client_socket);
@@ -74,7 +115,7 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         return(0);
     } else {
-        fprintf(stderr, "Opened database successfully\n");
+        // fprintf(stderr, "Opened database successfully\n");
     }
 
     const char *sql = "SELECT * from arc";
@@ -89,10 +130,8 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
             int item = sqlite3_column_int(stmt, i);
             crc = update_crc_16(crc, item);
         }
-        printf("Data at index %d: %d\n", crc, shm[crc]);
         shm[crc]++;
     } while (res == SQLITE_ROW);
     sqlite3_close(db);
     return 0;
 }
-

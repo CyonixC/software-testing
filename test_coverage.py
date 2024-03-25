@@ -41,10 +41,9 @@ def main():
 
     while True:
         conn, addr = s.accept()
-        conn.recv(1024)
+        x = int.from_bytes(conn.recv(1), "little")
+        y = int.from_bytes(conn.recv(1), "little")
         cov.start()
-        x = random.randint(0, 20)
-        y = random.randint(0, 20)
         fn(int(x), int(y))
         cov.stop()
         cov.save()

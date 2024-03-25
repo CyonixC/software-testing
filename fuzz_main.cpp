@@ -1,21 +1,21 @@
-#include <stdio.h>
-#include <iostream>
-#include <filesystem>
-#include <unistd.h> // For fork(), execvp()
-#include <sys/wait.h> // For waitpid()
-#include <iostream>
-#include <unistd.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
-#include "sample_test_driver.h"
+#include <array>
 #include <cstring>
-#include "inputs.h"
-#include <random>
+#include <filesystem>
+#include <fstream>  // ifstream
 #include <iostream>
-#include "read_files.h"
+#include <queue>
+#include <random>
+#include <stdio.h>
+#include <sys/wait.h> // For waitpid()
+#include <unistd.h> // For fork(), execvp()
 
-const char* config_file = "input_config_example.json";
-const char* seed_file = "seed_file_example.json";
+#include "config.h"
+#include "inputs.h"
+#include "sample_program.h"
+
+const std::string config_file = "input_config_example.json";
+namespace fs = std::filesystem;
+const fs::path output_directory{"fuzz_out"};
 
 template<typename T>
 T random_int(T min, T max) {
@@ -25,69 +25,83 @@ T random_int(T min, T max) {
     return dis(gen);
 }
 
-using namespace std;
-
-const int SIZE = 65536;
-pid_t run_py();
-int run_driver(std::array<char, SIZE> &shm);
+int run_driver(std::array<char, SIZE> &shm, InputSeed input);
+InputSeed mutateSeed(InputSeed seed);
+bool isInteresting(std::array<char, SIZE> data);
 
 int main() {
     // Initialise the coverage measurement buffer
     std::array<char, SIZE> coverage_arr{};
 
+    // Initialise the seed queue
+    std::queue<InputSeed> seedQueue;
+
+    // Read the config file
+    std::ifstream file{config_file};
+    const json config = json::parse(file);
+    std::vector<Field> fields = readFields(config);
+    if (!config.contains("seed_folder")) {
+        throw std::runtime_error("Config file does not contain a seed folder path");
+    }
+    const fs::path seed_folder{config["seed_folder"]};
+
+    // Create output folder
+    fs::create_directories(output_directory);
+
+    // Read the seed file
+    for (auto const& seed_file : fs::directory_iterator{seed_folder}) {
+        std::ifstream seed{seed_file.path()};
+        json seed_json = json::parse(seed);
+        InputSeed seed_input = readSeed(seed_json, fields);
+
+        seedQueue.push(seed_input);
+    }
+    
     // Run the coverage Python script to generate the .coverage file
     // This is a stand-in for the actual server, and is just listening for connections on 4345.
-    pid_t pid = run_py();
-    printf("Python server started\n");
+    pid_t pid = run_server();
+    printf("Server started\n");
     sleep(1); // Wait for the server to start, on actual should probably use a signal or something
 
-    for (int i = 0; i < 10; i++) {
-        // Run the driver a few times
-        run_driver(coverage_arr);
-        for (int j = 0; j < SIZE; j++) {
-            if (coverage_arr[j] != 0) {
-                printf("Data at index %d: %d\n", j, coverage_arr[j]);
+    unsigned int interesting_count = 0;
+
+    while (true) {
+        InputSeed i = seedQueue.front();
+        seedQueue.pop();
+
+        for (int j = 0; j < i.energy; j++) {
+            InputSeed mutated = mutateSeed(i);
+        
+            // Run the driver a few times
+            run_driver(coverage_arr, mutated);
+            if (isInteresting(coverage_arr)) {
+                seedQueue.emplace(mutated);
+                std::cout << "Interesting: " << mutated.to_json() << std::endl;
+                
+                // Output interesting input as a file in the output directory
+                std::ostringstream filename;
+                filename << "input" << interesting_count << ".json";
+                fs::path output_path{output_directory / filename.str()};
+                std::ofstream output_file{output_path};
+                output_file << std::setw(4) << mutated.to_json() << std::endl;
+                interesting_count++;
             }
+
+            // Zero out the coverage array
+            for (auto &elem : coverage_arr) {
+                elem = 0;
+            }
+
         }
-        // Zero out the coverage array
-        for (auto &elem : coverage_arr) {
-            elem = 0;
-        }
+        seedQueue.emplace(i);
 
     }
     kill(pid, SIGTERM); // Kill the Python server
 }
 
-int run_driver(array<char, SIZE> &shm) {
 
-    run_coverage_shm(shm);
-    return 0;
 
-}
-
-pid_t run_py() {
-
-    pid_t pid = fork();
-
-    if (pid == -1) {
-        // Error occurred
-        std::cerr << "Failed to fork" << std::endl;
-        return 0;
-    } else if (pid == 0) {
-        // Child process
-        char* args[] = {(char*)"python", (char*)"test_coverage.py", NULL};
-        execvp(args[0], args);
-        // If execvp returns, an error occurred
-        std::cerr << "Failed to execute Python script" << std::endl;
-        return 0;
-    } else {
-        // Parent process
-        // Wait for the child process to finish
-    }
-    return pid;
-}
-
-bool isInteresting(char* data) {
+bool isInteresting(std::array<char, SIZE> data) {
     // This is a mirror of the array produced by the coverage tool
     // to track which branches have been taken
 
@@ -100,27 +114,35 @@ bool isInteresting(char* data) {
     for (int i = 0; i < SIZE; i++) {
         if (data[i] >= 128 && tracking[i] >> 7 == 0) {
             tracking[i] |= 0b10000000;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 32 && (tracking[i] >> 6) % 2 == 0) {
             tracking[i] |= 0b01000000;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 16 && (tracking[i] >> 5) % 2 == 0) {
             tracking[i] |= 0b00100000;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 8 && (tracking[i] >> 4) % 2 == 0) {
             tracking[i] |= 0b00010000;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] >= 4 && (tracking[i] >> 3) % 2 == 0) {
             tracking[i] |= 0b00001000;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 3 && (tracking[i] >> 2) % 2 == 0) {
             tracking[i] |= 0b00000100;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 2 && (tracking[i] >> 1) % 2 == 0) {
             tracking[i] |= 0b00000010;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         } else if (data[i] == 1 && tracking[i] % 2 == 0) {
             tracking[i] |= 0b00000001;
+            // std::cout << "new path: " << i << std::endl;
             is_interesting = true;
         }
     }
@@ -128,12 +150,13 @@ bool isInteresting(char* data) {
     return is_interesting;
 }
 
-void assignEnergy(Input& input) {
+void assignEnergy(InputSeed& input) {
     // Just assign constant energy
     const int ENERGY = 100;
     input.energy = ENERGY;
 }
-void mutate(Input& input) {
+
+void mutate(InputField& input) {
     if (input.data.empty()) return; // Check if there's data to mutate
 
     // Decide how many bytes to mutate based on the size of the data
@@ -148,5 +171,12 @@ void mutate(Input& input) {
         input.data[index] = newValue;
     }
 
-    std::cout << "Mutated " << mutationsCount << " bytes." << std::endl;
+}
+
+InputSeed mutateSeed(InputSeed seed) {
+    // Copies
+    for (auto &elem : seed.inputs) {
+        mutate(elem);
+    }
+    return seed;
 }

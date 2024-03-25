@@ -2,3 +2,4 @@
 bin/
 data/
 __pycache__/
+fuzz_out/

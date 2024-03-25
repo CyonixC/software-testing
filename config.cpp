@@ -4,11 +4,36 @@
 #include <fstream>  // For reading files
 #include <iostream> // For some basic debugging
 #include <limits.h> // For UINT_MAX
-#include "json.hpp"
-#include "inputs.h"
+#include "config.h"
 
-using json = nlohmann::json;
 namespace fs = std::filesystem;
+
+/**
+ * @brief Reads a binary given its representation in json.
+ * This binary should have been produced by the write_json_binary() function.
+ * 
+ * @param json_bin A std::vector of uint8s to convert to bytes.
+*/
+std::vector<std::byte> int_to_binary(const std::vector<uint8_t> &json_bin) {
+    std::vector<std::byte> ret;
+    for (auto byte_dec : json_bin) {
+        ret.push_back(static_cast<std::byte>(byte_dec));
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Converts a std::vector of bytes to integer representation.
+*/
+std::vector<uint8_t> binary_to_int(const std::vector<std::byte> &byte_arr) {
+    std::vector<uint8_t> ret;
+    for (auto byte_bin : byte_arr) {
+        ret.push_back(static_cast<uint8_t>(byte_bin));
+    }
+
+    return ret;
+}
 
 
 /**
@@ -44,21 +69,24 @@ std::vector<Field> readFields(const json& j) {
             f.maxLen = UINT_MAX;
         }
 
+        f.name = it.key();
+
+        FieldTypes type;
+        // Check the type of the choices
+        if (field_conf["type"] == "string") {
+            type = FieldTypes::STRING;
+        } else if (field_conf["type"] == "integer") {
+            type = FieldTypes::INTEGER;
+        } else if (field_conf["type"] == "binary") {
+            type = FieldTypes::BINARY;
+        } else {
+            throw std::runtime_error("Invalid choice type");
+        }
+
+        f.type = type;
+
         // If the field uses choices, read the choices from the file
         if (field_conf.contains("choices")) {
-
-            FieldTypes type;
-            // Check the type of the choices
-            if (field_conf["choice_type"] == "string") {
-                type = FieldTypes::STRING;
-            } else if (field_conf["choice_type"] == "integer") {
-                type = FieldTypes::INTEGER;
-            } else if (field_conf["choice_type"] == "binary") {
-                type = FieldTypes::BINARY;
-            } else {
-                throw std::runtime_error("Invalid choice type");
-            }
-
             json choices = field_conf["choices"];
 
             for (auto &it : choices.items()) {
@@ -82,7 +110,8 @@ std::vector<Field> readFields(const json& j) {
                 }
                 case FieldTypes::BINARY:
                 {
-                    throw std::runtime_error("Binary choices not yet implemented");
+                    const std::vector<uint8_t> val = it.value();
+                    f.validChoices.push_back(int_to_binary(val));
                     break;
                 }
                 default:
@@ -95,19 +124,19 @@ std::vector<Field> readFields(const json& j) {
     return fields;
 }
 
-std::vector<Input> readSeed(const json &j, std::vector<Field> &fields) {
-    std::vector<Input> ret;
+InputSeed readSeed(const json &j, std::vector<Field> &fields) {
+    InputSeed ret;
+    ret.energy = 10;
     for (Field f : fields) {
         if (!j.contains(f.name))
             throw std::runtime_error("Seed does not contain required field value");
-        Input inp;
+        InputField inp;
         inp.format = f;
-        inp.energy = 0;
         FieldTypes type =  f.type;
         switch (type) {
             case FieldTypes::STRING: 
             {
-                std::string val = j[f.name]["data"].get<std::string>();
+                std::string val = j[f.name].get<std::string>();
                 std::vector<std::byte> vec;
                 for (char c : val)  
                     vec.push_back(static_cast<std::byte>(c));
@@ -117,38 +146,49 @@ std::vector<Input> readSeed(const json &j, std::vector<Field> &fields) {
             }
             case FieldTypes::INTEGER:
             {
-                int val = j[f.name]["data"].get<int>();
+                int val = j[f.name].get<int>();
                 inp.data = std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int));
                 break;
             }
             case FieldTypes::BINARY:
             {
-                throw std::runtime_error("Binary choices not yet implemented");
+                const std::vector<uint8_t> val = j[f.name];
+                inp.data = int_to_binary(val);
                 break;
             }
             default:
                 break;
         }
-        ret.push_back(inp);
+        ret.inputs.push_back(inp);
     }
     return ret;
 }
 
-int main() {
-    std::string config_file = "input_config_example.json";
-    std::ifstream file(config_file);
-    json j = json::parse(file);
-    std::vector<Field> fields = readFields(j);
-    for (Field f : fields) {
-        std::cout << "Min length: " << f.minLen << std::endl;
-        std::cout << "Max length: " << f.maxLen << std::endl;
-        std::cout << "Choices: " << std::endl;
-        for (std::vector<std::byte> choice : f.validChoices) {
-            for (std::byte c : choice) {
-                std::cout << static_cast<char>(c) << std::endl;
-            }
-            std::cout << std::endl;
-        }
-    }
-    return 0;
-}
+// int main() {
+//     // const std::vector<unsigned char> test{13, 44, 25, 56, 165, 125, 43, 29, 38};
+//     // const std::vector<std::byte> bytes = int_to_binary(test);
+//     // json j;
+//     // j["test"] = test;
+//     // std::cout << j.dump() << std::endl;
+//     const std::string config_file = "input_config_example.json";
+//     const std::string seed_file = "seed_file_example.json";
+//     std::ifstream file(config_file);
+//     json j = json::parse(file);
+//     std::vector<Field> fields = readFields(j);
+//     std::ifstream seed(seed_file);
+//     json k = json::parse(seed);
+//     InputSeed inputs = readSeed(k, fields);
+//     std::cout << inputs.to_json().dump() << std::endl;
+//     // for (Field f : fields) {
+//     //     std::cout << "Min length: " << f.minLen << std::endl;
+//     //     std::cout << "Max length: " << f.maxLen << std::endl;
+//     //     std::cout << "Choices: " << std::endl;
+//     //     for (std::vector<std::byte> choice : f.validChoices) {
+//     //         for (std::byte c : choice) {
+//     //             std::cout << static_cast<char>(c) << std::endl;
+//     //         }
+//     //         std::cout << std::endl;
+//     //     }
+//     // }
+//     return 0;
+// }

@@ -3,16 +3,23 @@
     "launch_script": "launch_example.sh",
     "seed_folder": "seed_example",
     "fields": {
-        "example_1": {
-            "min_length": 4,
-            "max_length": 10,
-            "choice_type": "string",
-            "choices": ["test1", "test2", "test3", "test4"]
+        "a": {
+            "min_length": 1,
+            "max_length": 1000,
+            "type": "integer"
         },
-        "example_2": {
-            "max_length": 11,
-            "choice_type": "integer",
-            "choices": [12345, 23456, 34567]
+        "b": {
+            "type": "integer"
+        },
+        "c": {
+            "type": "binary",
+            "choices": [
+                [12, 13, 15, 16, 18],
+                [123, 15, 64, 17, 123]
+            ]
+        },
+        "d": {
+            "type": "string"
         }
     }
 }
