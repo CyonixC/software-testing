@@ -75,7 +75,7 @@ int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
         close(client_socket);
         return 1;
     }
-    std::cout << "Connected to the server.\n";
+    // std::cout << "Connected to the server.\n";
 
     // Send data to the server
     if (send(client_socket, &a, 1, 0) == -1) {
@@ -88,7 +88,7 @@ int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
         close(client_socket);
         return 1;
     }
-    std::cout << "Sent: " << a << " " << b << std::endl;
+    // std::cout << "Sent: " << a << " " << b << std::endl;
 
     // Receive data from the server
     char buffer[1024];
@@ -99,7 +99,7 @@ int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {
         return 1;
     }
     buffer[bytes_received] = '\0';
-    std::cout << "Received: " << buffer << std::endl;
+    // std::cout << "Received: " << buffer << std::endl;
 
     // Close the socket
     close(client_socket);
@@ -118,7 +118,7 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
         return(0);
     } else {
-        fprintf(stderr, "Opened database successfully\n");
+        // fprintf(stderr, "Opened database successfully\n");
     }
 
     const char *sql = "SELECT * from arc";
