@@ -14,7 +14,8 @@
 #include "sample_program.h"
 
 const std::string config_file = "input_config_example.json";
-const std::string seed_file = "seed_file_example.json";
+namespace fs = std::filesystem;
+const fs::path output_directory{"fuzz_out"};
 
 template<typename T>
 T random_int(T min, T max) {
@@ -24,9 +25,7 @@ T random_int(T min, T max) {
     return dis(gen);
 }
 
-using namespace std;
-
-int run_driver(array<char, SIZE> &shm, InputSeed input);
+int run_driver(std::array<char, SIZE> &shm, InputSeed input);
 InputSeed mutateSeed(InputSeed seed);
 bool isInteresting(std::array<char, SIZE> data);
 
@@ -39,20 +38,31 @@ int main() {
 
     // Read the config file
     std::ifstream file{config_file};
-    json config = json::parse(file);
+    const json config = json::parse(file);
     std::vector<Field> fields = readFields(config);
+    if (!config.contains("seed_folder")) {
+        throw std::runtime_error("Config file does not contain a seed folder path");
+    }
+    const fs::path seed_folder{config["seed_folder"]};
+
+    // Create output folder
+    if (!fs::create_directories(output_directory)) {
+        throw std::runtime_error("Couldn't create output folder");
+    }
 
     // Read the seed file
-    std::ifstream seed{seed_file};
-    json seed_json = json::parse(seed);
-    InputSeed seed_input = readSeed(seed_json, fields);
+    for (auto const& seed_file : fs::directory_iterator{seed_folder}) {
+        std::ifstream seed{seed_file.path()};
+        json seed_json = json::parse(seed);
+        InputSeed seed_input = readSeed(seed_json, fields);
 
-    seedQueue.push(seed_input);
+        seedQueue.push(seed_input);
+    }
     
     // Run the coverage Python script to generate the .coverage file
     // This is a stand-in for the actual server, and is just listening for connections on 4345.
     pid_t pid = run_server();
-    printf("Python server started\n");
+    printf("Server started\n");
     sleep(1); // Wait for the server to start, on actual should probably use a signal or something
 
     while (true) {
@@ -66,7 +76,7 @@ int main() {
             run_driver(coverage_arr, mutated);
             if (isInteresting(coverage_arr)) {
                 seedQueue.emplace(mutated);
-                std::cout << "Interesting: " << static_cast<char>(mutated.inputs[0].data[0]) << ", " << static_cast<char>(mutated.inputs[1].data[0]) << std::endl;
+                std::cout << "Interesting: " << mutated.to_json() << std::endl;
             }
 
             // Zero out the coverage array
