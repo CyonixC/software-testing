@@ -133,7 +133,6 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
             int item = sqlite3_column_int(stmt, i);
             crc = update_crc_16(crc, item);
         }
-        printf("Data at index %d: %d\n", crc, shm[crc]);
         shm[crc]++;
     } while (res == SQLITE_ROW);
     sqlite3_close(db);
