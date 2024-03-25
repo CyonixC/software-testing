@@ -164,31 +164,31 @@ InputSeed readSeed(const json &j, std::vector<Field> &fields) {
     return ret;
 }
 
-int main() {
-    // const std::vector<unsigned char> test{13, 44, 25, 56, 165, 125, 43, 29, 38};
-    // const std::vector<std::byte> bytes = int_to_binary(test);
-    // json j;
-    // j["test"] = test;
-    // std::cout << j.dump() << std::endl;
-    const std::string config_file = "input_config_example.json";
-    const std::string seed_file = "seed_file_example.json";
-    std::ifstream file(config_file);
-    json j = json::parse(file);
-    std::vector<Field> fields = readFields(j);
-    std::ifstream seed(seed_file);
-    json k = json::parse(seed);
-    InputSeed inputs = readSeed(k, fields);
-    std::cout << inputs.to_json().dump() << std::endl;
-    // for (Field f : fields) {
-    //     std::cout << "Min length: " << f.minLen << std::endl;
-    //     std::cout << "Max length: " << f.maxLen << std::endl;
-    //     std::cout << "Choices: " << std::endl;
-    //     for (std::vector<std::byte> choice : f.validChoices) {
-    //         for (std::byte c : choice) {
-    //             std::cout << static_cast<char>(c) << std::endl;
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
-    return 0;
-}
+// int main() {
+//     // const std::vector<unsigned char> test{13, 44, 25, 56, 165, 125, 43, 29, 38};
+//     // const std::vector<std::byte> bytes = int_to_binary(test);
+//     // json j;
+//     // j["test"] = test;
+//     // std::cout << j.dump() << std::endl;
+//     const std::string config_file = "input_config_example.json";
+//     const std::string seed_file = "seed_file_example.json";
+//     std::ifstream file(config_file);
+//     json j = json::parse(file);
+//     std::vector<Field> fields = readFields(j);
+//     std::ifstream seed(seed_file);
+//     json k = json::parse(seed);
+//     InputSeed inputs = readSeed(k, fields);
+//     std::cout << inputs.to_json().dump() << std::endl;
+//     // for (Field f : fields) {
+//     //     std::cout << "Min length: " << f.minLen << std::endl;
+//     //     std::cout << "Max length: " << f.maxLen << std::endl;
+//     //     std::cout << "Choices: " << std::endl;
+//     //     for (std::vector<std::byte> choice : f.validChoices) {
+//     //         for (std::byte c : choice) {
+//     //             std::cout << static_cast<char>(c) << std::endl;
+//     //         }
+//     //         std::cout << std::endl;
+//     //     }
+//     // }
+//     return 0;
+// }
