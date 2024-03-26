@@ -3,7 +3,6 @@
 #include <filesystem>   // For file paths
 #include <fstream>  // For reading files
 #include <iostream> // For some basic debugging
-#include <limits.h> // For UINT_MAX
 #include "config.h"
 
 namespace fs = std::filesystem;
@@ -56,19 +55,6 @@ std::vector<Field> readFields(const json& j) {
         json field_conf = it.value();
         Field f;
         
-        // Assign min and max length values, if they exist
-        if (field_conf.contains("min_length")) {
-            f.minLen = field_conf["min_length"];
-        } else {
-            f.minLen = 0;
-        }
-
-        if (field_conf.contains("max_length")) {
-            f.maxLen = field_conf["max_length"];
-        } else {
-            f.maxLen = UINT_MAX;
-        }
-
         f.name = it.key();
 
         FieldTypes type;

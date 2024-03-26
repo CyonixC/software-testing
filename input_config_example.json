@@ -1,11 +1,7 @@
 {
-    "choice_folder": "choice_example",
-    "launch_script": "launch_example.sh",
     "seed_folder": "seed_example",
     "fields": {
         "a": {
-            "min_length": 1,
-            "max_length": 1000,
             "type": "integer"
         },
         "b": {
