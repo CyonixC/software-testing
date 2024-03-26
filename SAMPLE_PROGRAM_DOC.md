@@ -21,6 +21,21 @@ The flow is as follows:
 9. If is interesting, add to queue.
 10. Fuzzer mutates the seed and starts the driver again from step 3
 
+## Config files
+The fuzzer needs to read 1 main config file per target. This config contains:
+1. `seed_folder` - The path to the folder containing the seed inputs
+2. `fields` - A JSON object with the names and constraints of each field in the input
+
+Each field in the `fields` JSON object requires:
+1. A name - this is the key to the field
+2. `type` - choose from integer, string or binary
+3. (optional) `choices` - the set of values which the field is allowed to take
+
+## Binary representation
+The `binary` type is represented as an array of integers, because binary values are not allowed in JSON.
+
+Each integer in the array represents the value of one byte.
+
 ## Coverage measurement
 If using `coverage.py`, I've written some C++ code to read from the `.coverage` database file and hash the result into the `coverage_array`.
 
