@@ -76,6 +76,10 @@ int main() {
         
             // Run the driver a few times
             bool failed = run_driver(coverage_arr, mutated);
+            if (failed) {
+                kill(pid, SIGTERM);
+                pid = run_server();
+            }
             if (isInteresting(coverage_arr)) {
                 seedQueue.emplace(mutated);
                 std::cout << "Interesting: " << mutated.to_json() << std::endl;
@@ -83,15 +87,15 @@ int main() {
                 // Output interesting input as a file in the output directory
                 std::ostringstream filename;
                 fs::path output_path;
-                if (!failed) {
-                    filename << "input" << interesting_count << ".json";
-                    output_path = output_directory / "interesting" / filename.str();
-                    interesting_count++;
-                }
-                else {
+                if (failed) {
                     filename << "input" << crash_count << ".json";
                     output_path = output_directory / "crash" / filename.str();
                     crash_count++;
+                }
+                else {
+                    filename << "input" << interesting_count << ".json";
+                    output_path = output_directory / "interesting" / filename.str();
+                    interesting_count++;
                 }
                 std::ofstream output_file{output_path};
                 output_file << std::setw(4) << mutated.to_json() << std::endl;
