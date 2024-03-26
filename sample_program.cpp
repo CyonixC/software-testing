@@ -43,8 +43,7 @@ int run_driver(std::array<char, SIZE> &shm, InputSeed input) {
             b = static_cast<char>(elem.data[0]);
         }
     }
-    run_coverage_shm(shm, a, b);
-    return 0;
+    return run_coverage_shm(shm, a, b);
 }
 
 int run_coverage_shm(std::array<char, SIZE>& shm, char a, char b) {

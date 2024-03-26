@@ -46,7 +46,8 @@ int main() {
     const fs::path seed_folder{config["seed_folder"]};
 
     // Create output folder
-    fs::create_directories(output_directory);
+    fs::create_directories(output_directory / "interesting");
+    fs::create_directories(output_directory / "crash");
 
     // Read the seed file
     for (auto const& seed_file : fs::directory_iterator{seed_folder}) {
@@ -64,6 +65,7 @@ int main() {
     sleep(1); // Wait for the server to start, on actual should probably use a signal or something
 
     unsigned int interesting_count = 0;
+    unsigned int crash_count = 0;
 
     while (true) {
         InputSeed i = seedQueue.front();
@@ -73,18 +75,26 @@ int main() {
             InputSeed mutated = mutateSeed(i);
         
             // Run the driver a few times
-            run_driver(coverage_arr, mutated);
+            bool failed = run_driver(coverage_arr, mutated);
             if (isInteresting(coverage_arr)) {
                 seedQueue.emplace(mutated);
                 std::cout << "Interesting: " << mutated.to_json() << std::endl;
                 
                 // Output interesting input as a file in the output directory
                 std::ostringstream filename;
-                filename << "input" << interesting_count << ".json";
-                fs::path output_path{output_directory / filename.str()};
+                fs::path output_path;
+                if (!failed) {
+                    filename << "input" << interesting_count << ".json";
+                    output_path = output_directory / "interesting" / filename.str();
+                    interesting_count++;
+                }
+                else {
+                    filename << "input" << crash_count << ".json";
+                    output_path = output_directory / "crash" / filename.str();
+                    crash_count++;
+                }
                 std::ofstream output_file{output_path};
                 output_file << std::setw(4) << mutated.to_json() << std::endl;
-                interesting_count++;
             }
 
             // Zero out the coverage array
