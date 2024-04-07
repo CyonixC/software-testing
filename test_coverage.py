@@ -1,6 +1,5 @@
 import coverage
 import atexit
-import random
 import socket
 
 def fn(x: int, y:int):
@@ -18,6 +17,13 @@ def fn(x: int, y:int):
             return 16
         if x == y:
             return 3
+        if y >= 30:
+            for i in range(y):
+                pass
+            return 42
+        if x == 40:
+            # Crash
+            exit(1)
         else:
             return y
     
@@ -41,10 +47,9 @@ def main():
 
     while True:
         conn, addr = s.accept()
-        conn.recv(1024)
+        x = int.from_bytes(conn.recv(1), "little")
+        y = int.from_bytes(conn.recv(1), "little")
         cov.start()
-        x = random.randint(0, 20)
-        y = random.randint(0, 20)
         fn(int(x), int(y))
         cov.stop()
         cov.save()

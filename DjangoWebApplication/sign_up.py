@@ -5,7 +5,7 @@ base_url = 'http://127.0.0.1:8000'
 
 registration_endpoint = '/accounts/register/'
 
-registration_url = base_url + registration_endpoint
+registration_url =  + registration_endpoint
 
 user_data = {
     'username': 'john',
