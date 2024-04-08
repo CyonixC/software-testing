@@ -12,6 +12,7 @@
 #include "config.h"
 #include "inputs.h"
 #include "sample_program.h"
+#include "driver.h"
 
 const std::string config_file = "input_config_example.json";
 namespace fs = std::filesystem;
@@ -42,7 +43,7 @@ T random_int(T min, T max) {
     return dis(gen);
 }
 
-int run_driver(std::array<char, SIZE> &shm, InputSeed input);
+std::vector<Input> makeInputsFromSeed(const InputSeed& seed);
 InputSeed mutateSeed(InputSeed seed);
 bool isInteresting(std::array<char, SIZE> data);
 
@@ -96,6 +97,18 @@ static uint32_t choose_block_len(uint32_t limit) {
     return min_value + rand32(max_value - min_value + 1);
 
 }
+
+std::vector<Input> makeInputsFromSeed(const InputSeed& seed) {
+    std::vector<Input> out {};
+    for (InputField inpf : seed.inputs) {
+        Input in;
+        in.data = inpf.data;
+        in.name = inpf.format.name;
+        out.push_back(in);
+    }
+    return out;
+}
+
 int main() {
     // Initialise the coverage measurement buffer
     std::array<char, SIZE> coverage_arr{};
@@ -140,9 +153,10 @@ int main() {
 
         for (int j = 0; j < i.energy; j++) {
             InputSeed mutated = mutateSeed(i);
+            std::vector<Input> inputs = makeInputsFromSeed(mutated);
         
             // Run the driver a few times
-            bool failed = run_driver(coverage_arr, mutated);
+            bool failed = run_driver(coverage_arr, inputs);
             if (failed) {
                 kill(pid, SIGTERM);
                 pid = run_server();

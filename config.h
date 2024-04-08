@@ -11,7 +11,6 @@ InputSeed readSeed(const json &j, std::vector<Field> &fields);
 std::vector<std::byte> int_to_binary(const std::vector<uint8_t> &json_bin);
 std::vector<uint8_t> binary_to_int(const std::vector<std::byte> &byte_arr);
 
-const int SIZE = 65536;
 
 #define INTERESTING_8 \
   -128,          /* Overflow signed 8-bit when decremented  */ \
