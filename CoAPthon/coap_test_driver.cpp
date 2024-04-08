@@ -226,3 +226,36 @@ int main()
 
     return 0;
 }
+pid_t run_server() {
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "Failed to fork" << std::endl;
+        return 0;
+    } else if (pid == 0) {
+        // Child process
+        // Constructing the command with sudo. This assumes the user has passwordless sudo set up for gdb.
+        char* args[] = {
+            (char*)"sudo",
+            (char*)"gdb",
+            (char*)"-ex",
+            (char*)"run",
+            (char*)"-ex",
+            (char*)"backtrace",
+            (char*)"--args",
+            (char*)"python2",
+            (char*)"coapserver.py",
+            (char*)"-i",
+            (char*)"127.0.0.1",
+            (char*)"-p",
+            (char*)"5683",
+            NULL
+        };
+        execvp(args[0], args);
+        // If execvp returns, an error occurred
+        std::cerr << "Failed to execute command" << std::endl;
+        _exit(EXIT_FAILURE); // Use _exit in child after fork
+    }
+    // Parent process
+    return pid;
+}
