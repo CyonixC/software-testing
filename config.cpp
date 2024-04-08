@@ -1,8 +1,9 @@
-#include <vector>
 #include <cstddef>  // For std::byte
 #include <filesystem>   // For file paths
 #include <fstream>  // For reading files
 #include <iostream> // For some basic debugging
+#include <limits.h> // For INT_MAX
+#include <vector>
 #include "config.h"
 
 namespace fs = std::filesystem;

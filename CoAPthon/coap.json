@@ -1,0 +1,31 @@
+{
+  "seed_folder": "coap_seed_file",
+  "fields": {
+    "Version":{
+        "type": "integer",
+        "choices": [1]
+    },
+    "T":{
+        "type": "integer",
+        "choices": [0,1,2,3]
+    },
+    "TKL":{
+        "type": "binary"
+    },
+      "Code": {
+          "type": "integer",
+          "choices": [1, 2, 3, 4]
+      },
+      "MessageID": {
+          "type": "integer"
+      },
+      "Token": {
+          "type": "binary"
+      },
+      "Uri-Path": {
+          "type": "string",
+          "choices": ["/basic", "/storage", "/child", "/separate", "/etag", "/", "/big", "/encoding", "/advancedSeparate", "/void", "/advanced", "/long", "/xml"]
+      },
+
+  }
+}

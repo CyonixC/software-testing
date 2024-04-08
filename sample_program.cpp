@@ -11,6 +11,8 @@
 #include "checksum.h"
 #include "inputs.h"
 #include "sample_program.h"
+#include "driver.h"
+#include "config.h"
 
 pid_t run_server() {
 
@@ -32,14 +34,14 @@ pid_t run_server() {
     return pid;
 }
 
-int run_driver(std::array<char, SIZE> &shm, InputSeed input) {
+int run_driver(std::array<char, SIZE> &shm, std::vector<Input>& inputs) {
     char a;
     char b;
-    for (auto &elem : input.inputs) {
-        if (elem.format.name == "a") {
+    for (auto &elem : inputs) {
+        if (elem.name == "a") {
             a = static_cast<char>(elem.data[0]);
         }
-        if (elem.format.name == "b") {
+        if (elem.name == "b") {
             b = static_cast<char>(elem.data[0]);
         }
     }
