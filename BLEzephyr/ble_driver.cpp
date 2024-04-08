@@ -143,7 +143,8 @@ void get_coverage_data()
         std::cerr << "Error getting coverage data: " << std::endl;
     }
 
-    std::cout << "Main driver: Sucessfully gotten coverage data" << std::endl;
+    std::cout << "Main driver: Sucessfully gotten coverage data. Killing zephyr again?" << std::endl;
+    status = std::system("pkill -15 -f './zephyr.exe'");
     return;
 }
 
