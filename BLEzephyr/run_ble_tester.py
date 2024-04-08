@@ -18,6 +18,19 @@ from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
 
+cpp_fifo_name = "./pipe/cpp.fifo"
+python_fifo_name = "./pipe/python.fifo"
+
+def fifo_read(rfd):
+    msg_len = int.from_bytes(os.read(rfd, 2), byteorder='little')    
+    msg = os.read(rfd, msg_len)
+    return msg, msg_len
+
+def fifo_write(wfd, message):
+    len_bytes = int.to_bytes(len(message), length=2, byteorder='little')
+    os.write(wfd, len_bytes)
+    os.write(wfd, str.encode(message))
+
 async def write_target(target, attribute, bytes):
     # Write
     try:
@@ -88,14 +101,35 @@ class TargetEventsListener(Device.Listener):
         show_services(target.services)
         
         # -------- Main interaction with the target here --------
+        
+        # Open the FIFO pipe for reading
+        rfd = os.open(python_fifo_name, os.O_RDONLY)
+        wfd = os.open(cpp_fifo_name, os.O_WRONLY)
+        
+        fifo_write(wfd, "Num messages?")
+        msg, _ = fifo_read(rfd)
+        msg_count = int.from_bytes(msg)
+        fifo_write(wfd, "Attribute?")
+        msg, _ = fifo_read(rfd)
+        attribute_num = int.from_bytes(msg)
+        print(f"Sending {msg_count} messages to attribute no. {attribute_num}")
+        
         print('=== Read/Write Attributes (Handles)')
         for attribute in attributes:
-            await write_target(target, attribute, [0x01])
-            await read_target(target, attribute)
+            if(attribute_num != attribute.handle):
+                continue
+            print("Found attribute! " + str(attribute.handle))
+            
+            for i in range(msg_count):
+                fifo_write(wfd, f"msg no.{i+1} pls?")
+                msg, _ = fifo_read(rfd)
+                await write_target(target, attribute, msg)
+                await read_target(target, attribute)
         
         print('---------------------------------------------------------------')
         print(color('[OK] Communication Finished', 'green'))
         print('---------------------------------------------------------------')
+        exit()
         # ---------------------------------------------------
         
         
