@@ -1,5 +1,7 @@
 .vscode/
 bin/
 data/
-__pycache__/
 fuzz_out/
+*.out
+*.gcda
+__pycache__/
