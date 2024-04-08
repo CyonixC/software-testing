@@ -97,7 +97,7 @@ void send_inputs_to_python(const int wfd, const int rfd, const std::vector<Input
     }
 }
 
-void wait_pid_exit(const int pid)
+void wait_python_exit(const int pid)
 {
     int childStatus;
     waitpid(pid, &childStatus, 0); // Wait for the child process to finish
@@ -129,8 +129,21 @@ void shutdown_zephyr_server(const int pid)
     }
 
     // Zephyr is still running. Kill it.
-    std::cout << "Main driver killing the zephyr server..." << std::endl;
+    std::cout << "Main driver: killing the zephyr server..." << std::endl;
     status = std::system("pkill -15 -f './zephyr.exe'");
+    return;
+}
+
+void get_coverage_data()
+{
+    int status = std::system("lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1");
+
+    if (status != 0)
+    {
+        std::cerr << "Error getting coverage data: " << std::endl;
+    }
+
+    std::cout << "Main driver: Sucessfully gotten coverage data" << std::endl;
     return;
 }
 
@@ -167,10 +180,11 @@ int driver(std::vector<Input> &inputs)
     }
 
     send_inputs_to_python(wfd, rfd, inputs);
-    wait_pid_exit(pid_1);
+    wait_python_exit(pid_1);
     close(wfd);
     close(rfd);
     shutdown_zephyr_server(pid_2);
+    get_coverage_data();
 
     return 0;
 }
