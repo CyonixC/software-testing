@@ -4,7 +4,6 @@
 #include "inputs.h"
 
 using json = nlohmann::json;
-const int SIZE = 65536;
 
 std::vector<Field> readFields(const json& j);
 InputSeed readSeed(const json &j, std::vector<Field> &fields);
