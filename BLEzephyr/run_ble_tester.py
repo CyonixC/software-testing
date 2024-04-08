@@ -21,6 +21,10 @@ from bumble.colors import color
 cpp_fifo_name = "./pipe/cpp.fifo"
 python_fifo_name = "./pipe/python.fifo"
 
+# Open the FIFO pipe for reading
+rfd = 0
+wfd = 0
+
 def fifo_read(rfd):
     msg_len = int.from_bytes(os.read(rfd, 2), byteorder='little')    
     msg = os.read(rfd, msg_len)
@@ -101,34 +105,35 @@ class TargetEventsListener(Device.Listener):
         show_services(target.services)
         
         # -------- Main interaction with the target here --------
-        
-        # Open the FIFO pipe for reading
-        rfd = os.open(python_fifo_name, os.O_RDONLY)
-        wfd = os.open(cpp_fifo_name, os.O_WRONLY)
-        
-        fifo_write(wfd, "Num messages?")
+        fifo_write(wfd, "Num messages (including attribute number msg)?")
         msg, _ = fifo_read(rfd)
-        msg_count = int.from_bytes(msg)
+        msg_count = int.from_bytes(msg, byteorder='little')
         fifo_write(wfd, "Attribute?")
         msg, _ = fifo_read(rfd)
-        attribute_num = int.from_bytes(msg)
-        print(f"Sending {msg_count} messages to attribute no. {attribute_num}")
+        attribute_num = int.from_bytes(msg, byteorder='little')
+        print(f"Python said: Sending {msg_count} messages to attribute no. {attribute_num}")
         
         print('=== Read/Write Attributes (Handles)')
         for attribute in attributes:
             if(attribute_num != attribute.handle):
                 continue
-            print("Found attribute! " + str(attribute.handle))
+            print("Python said: Found attribute! " + str(attribute.handle))
             
-            for i in range(msg_count):
-                fifo_write(wfd, f"msg no.{i+1} pls?")
+            for i in range(msg_count - 1):
+                fifo_write(wfd, f"Python said: msg no.{i+1} pls?")
                 msg, _ = fifo_read(rfd)
+                print(f"Python said: Thx for the message!")
                 await write_target(target, attribute, msg)
                 await read_target(target, attribute)
+        
         
         print('---------------------------------------------------------------')
         print(color('[OK] Communication Finished', 'green'))
         print('---------------------------------------------------------------')
+        print(f"Python said: Received all messages.... closing pipes...")
+        os.close(wfd)
+        os.close(rfd)
+        print(f"Python said: Pipe closed. Exiting...")
         exit()
         # ---------------------------------------------------
         
@@ -168,6 +173,12 @@ async def main():
         await device.start_scanning() # this calls "on_advertisement"
 
         print('Waiting Advertisment from BLE Target')
+        
+        global rfd
+        global wfd
+        rfd = os.open(python_fifo_name, os.O_RDONLY)
+        wfd = os.open(cpp_fifo_name, os.O_WRONLY)
+        
         while device.listener.got_advertisement is False:
             await asyncio.sleep(0.5)
         await device.stop_scanning() # Stop scanning for targets
