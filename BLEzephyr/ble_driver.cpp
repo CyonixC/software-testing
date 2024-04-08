@@ -94,9 +94,10 @@ void send_inputs_to_python(const int wfd, const int rfd, const std::vector<Input
     int i = 1;
     for (auto &input : inputs)
     {
-        std::cout << "Received from python: " << read_data(rfd) << std::endl;
+        read_data(rfd);
+        // std::cout << "Received from python: " << read_data(rfd) << std::endl;
         write_data(input.data, wfd);
-        std::cout << "Send to python: " << i << "th message" << std::endl;
+        // std::cout << "Send to python: " << i << "th message" << std::endl;
         i++;
     }
 }
@@ -211,7 +212,6 @@ void get_coverage_data(std::array<char, SIZE> &shm)
             auto to_hash = filename + get_branch_str(line);
             auto hash = crc_16(reinterpret_cast<const unsigned char *>(to_hash.data()), to_hash.length());
             shm[hash] += get_last_digit(line);
-            std::cout << "Wrote number " << get_last_digit(line) << " to index" << hash << std::endl;
         }
     }
     inputFile.close(); // Close the file after reading
@@ -258,6 +258,24 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
     get_coverage_data(shm);
 
     return 0;
+}
+
+#include <condition_variable>
+#include <mutex>
+
+pid_t run_server()
+{
+    auto pid = fork();
+
+    if (pid == 0)
+    {
+        std::condition_variable cv;
+        std::mutex mtx;
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock);
+        exit(1);
+    }
+    return pid;
 }
 
 int main()
