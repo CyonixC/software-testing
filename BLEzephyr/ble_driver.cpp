@@ -1,12 +1,16 @@
-#include "ble_driver.h"
+#include "../driver.h"
 
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fstream>
 #include <fcntl.h>
 #include <string>
 #include <sys/wait.h>
+#include <math.h>
+
+#include "../checksum.h"
 
 void write_data(const std::vector<std::byte> &bytes_vec, const int wfd)
 {
@@ -58,7 +62,7 @@ void try_create_fifo(const std::string &cpp_fifo_name, const std::string &python
 
 void run_zephyr_server()
 {
-    int status = std::system("GCOV_PREFIX=$(pwd) GCOV_PREFIX_STRIP=3 ./zephyr.exe --bt-dev=127.0.0.1:9000 ");
+    int status = std::system("GCOV_PREFIX=$(pwd) GCOV_PREFIX_STRIP=3 ./zephyr.exe --bt-dev=127.0.0.1:9000 > /dev/null 2>&1");
 
     if (status != 0)
     {
@@ -70,7 +74,7 @@ void run_zephyr_server()
 
 void run_python_ble_tester()
 {
-    int status = std::system("python3 run_ble_tester.py tcp-server:127.0.0.1:9000");
+    int status = std::system("python3 run_ble_tester.py tcp-server:127.0.0.1:9000 > /dev/null 2>&1");
 
     if (status != 0)
     {
@@ -134,21 +138,87 @@ void shutdown_zephyr_server(const int pid)
     return;
 }
 
-void get_coverage_data()
+int get_last_digit(const std::string &str)
 {
-    int status = std::system("lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1");
+    if (str.back() == '-')
+    {
+        return 0;
+    }
 
+    int i = 0;
+    for (auto it = str.rbegin(); *it != ','; it++)
+    {
+        int temp = (*it - '0');
+        for (int x = 0; x < it - str.rbegin(); x++)
+        {
+            temp *= 10;
+        }
+        i += temp;
+    }
+    return i;
+}
+
+std::string get_branch_str(const std::string &str)
+{
+    int end = 0;
+    int comma_count = 0;
+
+    for (auto letter : str)
+    {
+        if (letter == ',')
+        {
+            comma_count++;
+        }
+        if (comma_count == 3)
+        {
+            break;
+        }
+        end++;
+    }
+
+    return str.substr(5, 5 - end);
+}
+
+void get_coverage_data(std::array<char, SIZE> &shm)
+{
+    int status = std::system("lcov --capture --directory ./ --output-file lcov.info -q --rc lcov_branch_coverage=1 > /dev/null 2>&1");
     if (status != 0)
     {
         std::cerr << "Error getting coverage data: " << std::endl;
     }
-
     std::cout << "Main driver: Sucessfully gotten coverage data. Killing zephyr again?" << std::endl;
     status = std::system("pkill -15 -f './zephyr.exe'");
+
+    // Open the coverage file
+    std::ifstream inputFile{"./lcov.info"};
+
+    if (!inputFile.is_open())
+    {
+        std::cerr << "Failed to open the file." << std::endl;
+        return;
+    }
+
+    std::string line;
+    std::string filename = "";
+    while (std::getline(inputFile, line))
+    {
+        if (line.substr(0, 2) == "SF")
+        {
+            filename = line;
+        }
+        if (line.substr(0, 4) == "BRDA")
+        {
+            auto to_hash = filename + get_branch_str(line);
+            auto hash = crc_16(reinterpret_cast<const unsigned char *>(to_hash.data()), to_hash.length());
+            shm[hash] += get_last_digit(line);
+            std::cout << "Wrote number " << get_last_digit(line) << " to index" << hash << std::endl;
+        }
+    }
+    inputFile.close(); // Close the file after reading
     return;
 }
 
-int driver(std::vector<Input> &inputs)
+int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
 {
     std::string cpp_fifo_name = "./pipe/cpp.fifo";
     std::string python_fifo_name = "./pipe/python.fifo";
@@ -185,16 +255,17 @@ int driver(std::vector<Input> &inputs)
     close(wfd);
     close(rfd);
     shutdown_zephyr_server(pid_2);
-    get_coverage_data();
+    get_coverage_data(shm);
 
     return 0;
 }
 
 int main()
 {
+    std::array<char, SIZE> shm;
     std::vector<Input> inputs{};
     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x06}}, ""});
     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}}, ""});
     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x10}, std::byte{0x11}, std::byte{0x12}}, ""});
-    driver(inputs);
+    run_driver(shm, inputs);
 }
