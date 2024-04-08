@@ -30,3 +30,8 @@ typedef struct {
     unsigned int energy;
     json to_json() const;
 } InputSeed;
+
+typedef struct {
+    std::vector<std::byte> data;
+    std::string name;
+} Input;
