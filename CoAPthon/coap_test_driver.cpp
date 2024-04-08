@@ -13,7 +13,7 @@
 #include <cerrno>       // For errno
 #include <array>
 #include <sqlite3.h>
-#include "../config.h"
+#include "../driver.h"
 #include "../checksum.h"
 #include <stdexcept> // Include for std::runtime_error
 
