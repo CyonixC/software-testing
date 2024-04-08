@@ -9,6 +9,8 @@
 #include <string>
 #include <sys/wait.h>
 #include <math.h>
+#include <condition_variable>
+#include <mutex>
 
 #include "../checksum.h"
 
@@ -212,6 +214,7 @@ void get_coverage_data(std::array<char, SIZE> &shm)
             auto to_hash = filename + get_branch_str(line);
             auto hash = crc_16(reinterpret_cast<const unsigned char *>(to_hash.data()), to_hash.length());
             shm[hash] += get_last_digit(line);
+            std::cout << "Wrote digit: " << get_last_digit(line) << " to index " << hash << std::endl;
         }
     }
     inputFile.close(); // Close the file after reading
@@ -259,9 +262,6 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
 
     return 0;
 }
-
-#include <condition_variable>
-#include <mutex>
 
 pid_t run_server()
 {
