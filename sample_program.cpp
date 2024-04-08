@@ -11,6 +11,7 @@
 #include "checksum.h"
 #include "inputs.h"
 #include "sample_program.h"
+#include "config.h"
 
 pid_t run_server() {
 
