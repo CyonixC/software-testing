@@ -11,6 +11,7 @@
 #include <math.h>
 #include <condition_variable>
 #include <mutex>
+#include <filesystem>   // for cd
 
 #include "../checksum.h"
 
@@ -38,6 +39,7 @@ std::string read_data(const int rfd)
     if (read(rfd, len_buffer, 2) == -1)
     {
         std::cerr << "Error reading from pipe: Buffer length" << std::endl;
+        exit(1);
     }
 
     uint32_t length = static_cast<uint32_t>(len_buffer[1]) * 8 + static_cast<uint32_t>(len_buffer[0]);
@@ -45,6 +47,7 @@ std::string read_data(const int rfd)
     if (read(rfd, buffer, length) == -1)
     {
         std::cerr << "Error reading from pipe: Actual message of length " << length << std::endl;
+        exit(1);
     }
 
     return std::string{buffer, length};
@@ -52,6 +55,7 @@ std::string read_data(const int rfd)
 
 void try_create_fifo(const std::string &cpp_fifo_name, const std::string &python_fifo_name)
 {
+    std::filesystem::create_directories("pipe");
     if (mkfifo(cpp_fifo_name.data(), S_IRWXU) == -1)
     {
         perror("Error creating cpp.fifo");
@@ -76,7 +80,7 @@ void run_zephyr_server()
 
 void run_python_ble_tester()
 {
-    int status = std::system("python3 run_ble_tester.py tcp-server:127.0.0.1:9000 > /dev/null 2>&1");
+    int status = std::system("python3 run_ble_tester.py tcp-server:127.0.0.1:9000");
 
     if (status != 0)
     {
@@ -214,7 +218,7 @@ void get_coverage_data(std::array<char, SIZE> &shm)
             auto to_hash = filename + get_branch_str(line);
             auto hash = crc_16(reinterpret_cast<const unsigned char *>(to_hash.data()), to_hash.length());
             shm[hash] += get_last_digit(line);
-            std::cout << "Wrote digit: " << get_last_digit(line) << " to index " << hash << std::endl;
+            // std::cout << "Wrote digit: " << get_last_digit(line) << " to index " << hash << std::endl;
         }
     }
     inputFile.close(); // Close the file after reading
@@ -223,9 +227,13 @@ void get_coverage_data(std::array<char, SIZE> &shm)
 
 int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
 {
+    auto path = std::filesystem::current_path(); //getting path
+    auto newpath = path / "BLEzephyr";
+    std::filesystem::current_path(newpath);
+
     std::string cpp_fifo_name = "./pipe/cpp.fifo";
     std::string python_fifo_name = "./pipe/python.fifo";
-    // try_create_fifo(cpp_fifo_name, python_fifo_name);
+    try_create_fifo(cpp_fifo_name, python_fifo_name);
 
     auto pid_1 = fork(); // First fork: BLE python
     if (pid_1 == 0)
@@ -235,7 +243,7 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
     else if (pid_1 < 0)
     {
         std::cerr << "Fork1 failed!" << std::endl;
-        return 1;
+        exit(1);
     }
 
     // Connect with python pipe. Zephyr will be ready when python connected with the pipe
@@ -250,7 +258,7 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
     else if (pid_2 < 0)
     {
         std::cerr << "Fork2 failed!" << std::endl;
-        return 1;
+        exit(1);
     }
 
     send_inputs_to_python(wfd, rfd, inputs);
@@ -260,6 +268,7 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input> &inputs)
     shutdown_zephyr_server(pid_2);
     get_coverage_data(shm);
 
+    std::filesystem::current_path(path);
     return 0;
 }
 
@@ -278,12 +287,12 @@ pid_t run_server()
     return pid;
 }
 
-int main()
-{
-    std::array<char, SIZE> shm;
-    std::vector<Input> inputs{};
-    inputs.push_back(Input{std::vector<std::byte>{std::byte{0x06}}, ""});
-    inputs.push_back(Input{std::vector<std::byte>{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}}, ""});
-    inputs.push_back(Input{std::vector<std::byte>{std::byte{0x10}, std::byte{0x11}, std::byte{0x12}}, ""});
-    run_driver(shm, inputs);
-}
+// int main()
+// {
+//     std::array<char, SIZE> shm;
+//     std::vector<Input> inputs{};
+//     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x06}}, ""});
+//     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x01}, std::byte{0x02}, std::byte{0x03}}, ""});
+//     inputs.push_back(Input{std::vector<std::byte>{std::byte{0x10}, std::byte{0x11}, std::byte{0x12}}, ""});
+//     run_driver(shm, inputs);
+// }

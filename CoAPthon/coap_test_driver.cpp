@@ -181,7 +181,7 @@ int sendUdpMessage(const std::string &host, uint16_t port, const std::vector<uin
         else
         {
             std::cout << "Received response: " << std::string(buffer, len) << std::endl;
-            hash_cov_into_shm(shm, "../data/.coverage");
+            hash_cov_into_shm(shm, "data/.coverage");
         }
     }
     else
@@ -192,26 +192,27 @@ int sendUdpMessage(const std::string &host, uint16_t port, const std::vector<uin
     close(sockfd);
     return 0;
 }
-int main()
-{
+int run_driver(std::array<char, SIZE> &shm, std::vector<Input>& inputs) {
     // Define the CoAP server details.
     std::string coapServerHost = "127.0.0.1";
     uint16_t coapServerPort = 5683;
 
-    // Initialize shared memory array
-    std::array<char, SIZE> shm = {}; // Assuming SIZE is defined correctly elsewhere.
+    std::cout << inputVectorToJSON(inputs);
 
-    // Define the example inputs for the various parts of the CoAP message.
-    std::vector<Input> inputs = {
-        {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
-        {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
-        {std::vector<std::byte>{std::byte(0x04)}, "TKL"},                                                                                                     // Token Length: 4
-        {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
-        {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
-        {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
-        {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
-        //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
-    };
+    // Initialize shared memory array
+    // std::array<char, SIZE> shm = {}; // Assuming SIZE is defined correctly elsewhere.
+
+    // // Define the example inputs for the various parts of the CoAP message.
+    // std::vector<Input> inputs = {
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
+    //     {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
+    //     {std::vector<std::byte>{std::byte(0x04)}, "TKL"},                                                                                                     // Token Length: 4
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
+    //     {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
+    //     {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
+    //     {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
+    //     //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
+    // };
 
     // Create the CoAP message.
     std::vector<uint8_t> coapMessage = createCoapMessage(inputs);
@@ -222,6 +223,7 @@ int main()
     // Handle the result as needed
     if (result == 1) {
         std::cout << "Timeout occurred or no response received." << std::endl;
+        return 1;
     }
 
     return 0;

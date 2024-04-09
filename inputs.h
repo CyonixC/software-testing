@@ -35,3 +35,5 @@ typedef struct {
     std::vector<std::byte> data;
     std::string name;
 } Input;
+
+json inputVectorToJSON(const std::vector<Input>& input);

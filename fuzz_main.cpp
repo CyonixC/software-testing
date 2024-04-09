@@ -14,7 +14,6 @@
 #include "sample_program.h"
 #include "driver.h"
 
-const std::string config_file = "input_config_example.json";
 namespace fs = std::filesystem;
 const fs::path output_directory{"fuzz_out"};
 
@@ -283,7 +282,7 @@ InputSeed mutateSeed(InputSeed seed) {
 
 void fuzz(std::vector<std::byte>& fuzz_data) {
 
-    int32_t stage_max = 100;  // arbitrary for now
+    int32_t stage_max = 1;  // arbitrary for now
     size_t size = fuzz_data.size();
 
     for (int32_t stage_cur = 0; stage_cur < stage_max; stage_cur++) {
@@ -294,7 +293,7 @@ void fuzz(std::vector<std::byte>& fuzz_data) {
     
         for (uint32_t i = 0; i < use_stacking; i++) {
 
-            switch (rand32(15)) {
+            switch (rand32(9)) {
 
                 case 0:
 
