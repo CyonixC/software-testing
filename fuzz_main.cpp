@@ -20,7 +20,7 @@ const fs::path output_directory{"fuzz_out"};
 static int8_t interesting_8[] = { INTERESTING_8 };
 static int16_t interesting_16[] = { INTERESTING_8, INTERESTING_16 };
 static int32_t interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
-void fuzz(std::vector<std::byte>& fuzz_data);
+void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen);
 
 // Change endianness of a 16 bit value
 uint16_t SWAP16(uint16_t _x) {
@@ -273,14 +273,14 @@ InputSeed mutateSeed(InputSeed seed) {
         } else {
 
           // Otherwise, put it through the mutation process.
-          fuzz(elem.data);
+          fuzz(elem.data, elem.format.minLen, elem.format.maxLen);
 
         }
     }
     return seed;
 }
 
-void fuzz(std::vector<std::byte>& fuzz_data) {
+void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
 
     int32_t stage_max = 1;  // arbitrary for now
     size_t size = fuzz_data.size();
@@ -293,7 +293,7 @@ void fuzz(std::vector<std::byte>& fuzz_data) {
     
         for (uint32_t i = 0; i < use_stacking; i++) {
 
-            switch (rand32(9)) {
+            switch (rand32(14)) {
 
                 case 0:
 
@@ -492,11 +492,11 @@ void fuzz(std::vector<std::byte>& fuzz_data) {
 
                       uint32_t del_from, del_len;
 
-                      if (size < 2) break;
+                      if (size <= minLen) break;
 
                       /* Don't delete too much. */
 
-                      del_len = choose_block_len(size - 1);
+                      del_len = choose_block_len(size - minLen);
 
                       del_from = rand32(size - del_len + 1);
 
@@ -518,16 +518,17 @@ void fuzz(std::vector<std::byte>& fuzz_data) {
                         uint8_t  actually_clone = rand32(4);
                         uint32_t clone_from, clone_to, clone_len;
                         std::vector<std::byte> new_buf;
+                        uint32_t max_blk_len = size * 2 < maxLen ? size : maxLen;
 
                         if (actually_clone) {
 
-                          clone_len  = choose_block_len(size);
-                          clone_from = rand32(size - clone_len + 1);
+                            clone_len  = choose_block_len(max_blk_len);
+                            clone_from = rand32(size - clone_len + 1);
 
                         } else {
 
-                          clone_len = choose_block_len(HAVOC_BLK_XL);
-                          clone_from = 0;
+                            clone_len = choose_block_len(max_blk_len);
+                            clone_from = 0;
 
                         }
 

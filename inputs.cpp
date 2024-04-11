@@ -39,9 +39,9 @@ json InputSeed::to_json() const {
 /**
  * @brief Converts an Input vector to a json representation.
 */
-json inputVectorToJSON(const std::vector<Input>& input) {
+json inputVectorToJSON(const std::vector<Input>& inputs) {
     json out;
-    for (Input input : input) {
+    for (Input input : inputs) {
         std::string name = input.name;
         std::vector<uint8_t> int_vector = binary_to_int(input.data);
         out[name] = int_vector;

@@ -72,6 +72,21 @@ std::vector<Field> readFields(const json& j) {
 
         f.type = type;
 
+        // If the field specifies min / max length, use those; otherwise, assume
+        // 1 min and inf max
+
+        if (field_conf.contains("min_length")) {
+            f.minLen = field_conf["min_length"];
+        } else {
+            f.minLen = 1;
+        }
+
+        if (field_conf.contains("max_length")) {
+            f.maxLen = field_conf["max_length"];
+        } else {
+            f.maxLen = INT_MAX;
+        }
+
         // If the field uses choices, read the choices from the file
         if (field_conf.contains("choices")) {
             json choices = field_conf["choices"];
