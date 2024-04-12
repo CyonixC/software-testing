@@ -24,6 +24,7 @@ python_fifo_name = "./pipe/python.fifo"
 # Open the FIFO pipe for reading
 rfd = 0
 wfd = 0
+hci_source = None
 
 def fifo_read(rfd):
     msg_len = int.from_bytes(os.read(rfd, 2), byteorder='little')    
@@ -39,27 +40,26 @@ async def write_target(target, attribute, bytes):
     # Write
     try:
         bytes_to_write = bytearray(bytes)
-        await target.write_value(attribute, bytes_to_write, True)
+        await asyncio.wait_for(target.write_value(attribute, bytes_to_write, True), 1)
         print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
         return True
     except ProtocolError as error:
         print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
-    except TimeoutError:
+    except asyncio.TimeoutError:
         print(color('[X] Write Timeout', 'red'))
-        
     return False
 
 
 async def read_target(target, attribute):
     # Read
     try: 
-        read = await target.read_value(attribute)
+        read = await asyncio.wait_for(target.read_value(attribute), 1)
         value = read.decode('latin-1')
         print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
         return value
     except ProtocolError as error:
         print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
-    except TimeoutError:
+    except asyncio.TimeoutError:
         print(color('[!] Read Timeout'))
     
     return None
@@ -111,7 +111,7 @@ class TargetEventsListener(Device.Listener):
         fifo_write(wfd, "Attribute?")
         msg, _ = fifo_read(rfd)
         attribute_num = int.from_bytes(msg, byteorder='little')
-        print(f"Python said: Sending {msg_count} messages to attribute no. {attribute_num}")
+        print(f"Python said: Sending {msg_count - 1} messages to attribute no. {attribute_num}")
         
         print('=== Read/Write Attributes (Handles)')
         for attribute in attributes:
@@ -121,9 +121,20 @@ class TargetEventsListener(Device.Listener):
             
             for i in range(msg_count - 1):
                 fifo_write(wfd, f"Python said: msg no.{i+1} pls?")
-                msg, _ = fifo_read(rfd)
-                print(f"Python said: Thx for the message!")
-                await write_target(target, attribute, msg)
+                msg, len = fifo_read(rfd)
+                
+                if(len == 0):
+                    msg = []
+                
+                print(f"Python said: Thx for the {i+1}th message!\n Sending: [", end="")
+                for byte in msg:
+                    print(f"0x{byte:02x}", end=", ")
+                print("]")
+
+                if(not (await write_target(target, attribute, msg))):
+                    print("Error with smth.... ending early")
+                    fifo_write(wfd, f"end")
+                    break
                 await read_target(target, attribute)
         
         
@@ -134,7 +145,8 @@ class TargetEventsListener(Device.Listener):
         os.close(wfd)
         os.close(rfd)
         print(f"Python said: Pipe closed. Exiting...")
-        exit()
+        
+        hci_source.terminated.set_result("Done")
         # ---------------------------------------------------
         
         
@@ -147,6 +159,8 @@ async def main():
         return
 
     print('>>> Waiting connection to HCI...')
+    
+    global hci_source
     async with await open_transport_or_link(sys.argv[1]) as (hci_source, hci_sink):
         print('>>> Connected')
 

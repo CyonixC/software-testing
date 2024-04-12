@@ -5,3 +5,4 @@ fuzz_out/
 *.out
 *.gcda
 __pycache__/
+*.info

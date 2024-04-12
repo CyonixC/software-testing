@@ -11,23 +11,25 @@ from binascii import hexlify
 from bumble.device import Device, Peer
 from bumble.host import Host
 from bumble.gatt import show_services
-from bumble.core import ProtocolError
+from bumble.core import ProtocolError, TimeoutError as bumbleTimeoutError
 from bumble.controller import Controller
 from bumble.link import LocalLink
 from bumble.transport import open_transport_or_link
 from bumble.utils import AsyncRunner
 from bumble.colors import color
 
+hci_source = None
+
 async def write_target(target, attribute, bytes):
     # Write
     try:
         bytes_to_write = bytearray(bytes)
-        await target.write_value(attribute, bytes_to_write, True)
+        await asyncio.wait_for(target.write_value(attribute, bytes_to_write, True), 1)
         print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
         return True
     except ProtocolError as error:
         print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
-    except TimeoutError:
+    except asyncio.TimeoutError:
         print(color('[X] Write Timeout', 'red'))
         
     return False
@@ -36,13 +38,13 @@ async def write_target(target, attribute, bytes):
 async def read_target(target, attribute):
     # Read
     try: 
-        read = await target.read_value(attribute)
+        read = await asyncio.wait_for(target.read_value(attribute), 1)
         value = read.decode('latin-1')
         print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
         return value
     except ProtocolError as error:
         print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
-    except TimeoutError:
+    except asyncio.TimeoutError:
         print(color('[!] Read Timeout'))
     
     return None
@@ -90,12 +92,17 @@ class TargetEventsListener(Device.Listener):
         # -------- Main interaction with the target here --------
         print('=== Read/Write Attributes (Handles)')
         for attribute in attributes:
+            # if(attribute.handle == 48):
+            #     await write_target(target, attribute, [0x01, 0x64, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0xe0, 0x01, 0x01, 0x01, 0x01, 0x01, 0x10, 0x01, 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0x00, 0x00, 0x02, 0x00, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xed, 0xbc, 0xd7, 0xd7, 0xd7, 0xd7, 0xca, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x27, 0x01, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0xd7, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x27, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x27, 0x01])
+            # continue
             await write_target(target, attribute, [0x01])
             await read_target(target, attribute)
+            break
         
         print('---------------------------------------------------------------')
         print(color('[OK] Communication Finished', 'green'))
         print('---------------------------------------------------------------')
+        hci_source.terminated.set_result("Done")
         # ---------------------------------------------------
         
         
@@ -108,6 +115,7 @@ async def main():
         return
 
     print('>>> Waiting connection to HCI...')
+    global hci_source
     async with await open_transport_or_link(sys.argv[1]) as (hci_source, hci_sink):
         print('>>> Connected')
 
@@ -145,7 +153,7 @@ async def main():
         print(f'=== Connecting to {target_address}...')
         await device.connect(target_address) # this calls "on_connection"
         
-        # Wait in an infinite loop
+        # Wait in an infinite loop... not.
         await hci_source.wait_for_termination()
 
 
