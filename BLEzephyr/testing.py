@@ -14,6 +14,13 @@ def fifo_write(wfd, message):
     os.write(wfd, str.encode(message))
 
 def main():
+    data = b"Hello World"
+    
+    print(data)
+    for b in data:
+        print(f"0x{b:02x}", end=", ")
+    
+    return
     with open('python_logs.txt', 'w') as log:
         log.write("Python is starting\n")
         

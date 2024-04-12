@@ -56,13 +56,13 @@ async def read_target(target, attribute):
         read = await asyncio.wait_for(target.read_value(attribute), 1)
         value = read.decode('latin-1')
         print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
-        return value
+        return True
     except ProtocolError as error:
         print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
     except asyncio.TimeoutError:
         print(color('[!] Read Timeout'))
     
-    return None
+    return False
 
 # -----------------------------------------------------------------------------
 class TargetEventsListener(Device.Listener):
@@ -114,29 +114,37 @@ class TargetEventsListener(Device.Listener):
         print(f"Python said: Sending {msg_count - 1} messages to attribute no. {attribute_num}")
         
         print('=== Read/Write Attributes (Handles)')
-        for attribute in attributes:
-            if(attribute_num != attribute.handle):
-                continue
-            print("Python said: Found attribute! " + str(attribute.handle))
-            
-            for i in range(msg_count - 1):
-                fifo_write(wfd, f"Python said: msg no.{i+1} pls?")
-                msg, len = fifo_read(rfd)
-                
-                if(len == 0):
-                    msg = []
-                
-                print(f"Python said: Thx for the {i+1}th message!\n Sending: [", end="")
-                for byte in msg:
-                    print(f"0x{byte:02x}", end=", ")
-                print("]")
-
-                if(not (await write_target(target, attribute, msg))):
-                    print("Error with smth.... ending early")
-                    fifo_write(wfd, f"end")
-                    break
-                await read_target(target, attribute)
         
+        correct_attribute = None
+        for attribute in attributes:
+            if(attribute_num == attribute.handle):
+                correct_attribute = attribute
+            print("Python said: Found attribute! " + str(attribute.handle))
+        
+        is_successful = True
+        
+        for i in range(msg_count - 1):
+            fifo_write(wfd, f"Python said: msg no.{i+1} pls?")
+            msg, len = fifo_read(rfd)
+            
+            if(len == 0):
+                msg = []
+                
+            # print(f"Python said: Thx for the {i+1}th message!\n Sending: [", end="")
+            # for byte in msg:
+            #     print(f"0x{byte:02x}", end=", ")
+            # print("]")
+
+            if(not(await write_target(target, correct_attribute, msg)) or not (await read_target(target, correct_attribute))):
+                print("Zephyr Server timed out. Ending early")
+                fifo_write(wfd, f"end")
+                is_successful = False
+                break
+        
+        if(is_successful):
+            fifo_write(wfd, "ok")
+        else:
+            fifo_write(wfd, "end")
         
         print('---------------------------------------------------------------')
         print(color('[OK] Communication Finished', 'green'))
