@@ -47,6 +47,7 @@ T random_int(T min, T max) {
 std::vector<Input> makeInputsFromSeed(const InputSeed& seed);
 InputSeed mutateSeed(InputSeed seed);
 bool isInteresting(std::array<char, SIZE>& data, bool failed);
+void assignEnergy(InputSeed& input, int seed_count);
 
 uint32_t rand32(uint32_t limit) {
     if (limit <= 1)
@@ -154,6 +155,7 @@ int main() {
 
     while (true) {
         InputSeed i = seedQueue.front();
+        assignEnergy(i, seedQueue.size());
         seedQueue.pop();
 
         for (int j = 0; j < i.energy; j++) {
@@ -262,13 +264,27 @@ bool isInteresting(std::array<char, SIZE>& data, bool failed) {
     return is_interesting;
 }
 
-void assignEnergy(InputSeed& input) {
-    // Just assign constant energy
-    const int ENERGY = 5;
-    input.energy = ENERGY;
+void assignEnergy(InputSeed& input, int seed_count) {
+    // Metadata about number of times we chose a seed
+    static int chosen_count_total = 0;
+    const int BASE_ENERGY = 1;
+
+    // If it's above average, don't fuzz it again
+    if (chosen_count_total / seed_count > input.chosen_count) {
+        input.energy = 0;
+        return;
+    }
+
+    // If it's below, fuzz it with exponential growth
+    input.chosen_count++;
+    chosen_count_total++;
+    input.energy = BASE_ENERGY * static_cast<int>(pow(2, input.chosen_count));
+    return;
 }
 
 InputSeed mutateSeed(InputSeed seed) {
+    seed.chosen_count = 0;
+    seed.energy = 0;
     // Copies the input seed to avoid mangling it
     for (auto& elem : seed.inputs) {
         if (!elem.format.validChoices.empty()) {

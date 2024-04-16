@@ -1,10 +1,10 @@
-#include <cstddef>  // For std::byte
-#include <filesystem>   // For file paths
-#include <fstream>  // For reading files
-#include <iostream> // For some basic debugging
-#include <limits.h> // For INT_MAX
-#include <vector>
 #include "config.h"
+#include <limits.h>    // For INT_MAX
+#include <cstddef>     // For std::byte
+#include <filesystem>  // For file paths
+#include <fstream>     // For reading files
+#include <iostream>    // For some basic debugging
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
  * 
  * @param json_bin A std::vector of uint8s to convert to bytes.
 */
-std::vector<std::byte> int_to_binary(const std::vector<uint8_t> &json_bin) {
+std::vector<std::byte> int_to_binary(const std::vector<uint8_t>& json_bin) {
     std::vector<std::byte> ret;
     for (auto byte_dec : json_bin) {
         ret.push_back(static_cast<std::byte>(byte_dec));
@@ -26,7 +26,7 @@ std::vector<std::byte> int_to_binary(const std::vector<uint8_t> &json_bin) {
 /**
  * @brief Converts a std::vector of bytes to integer representation.
 */
-std::vector<uint8_t> binary_to_int(const std::vector<std::byte> &byte_arr) {
+std::vector<uint8_t> binary_to_int(const std::vector<std::byte>& byte_arr) {
     std::vector<uint8_t> ret;
     for (auto byte_bin : byte_arr) {
         ret.push_back(static_cast<uint8_t>(byte_bin));
@@ -34,7 +34,6 @@ std::vector<uint8_t> binary_to_int(const std::vector<std::byte> &byte_arr) {
 
     return ret;
 }
-
 
 /**
  * @brief Read the fields from the config JSON.
@@ -44,7 +43,7 @@ std::vector<uint8_t> binary_to_int(const std::vector<std::byte> &byte_arr) {
 */
 std::vector<Field> readFields(const json& j) {
     std::vector<Field> fields;
-    fs::path p = "";    
+    fs::path p = "";
     if (!j.contains("fields")) {
         throw std::runtime_error("No fields found in JSON");
     }
@@ -52,10 +51,10 @@ std::vector<Field> readFields(const json& j) {
     if (j.contains("choice_folder")) {
         p = j["choice_folder"].get<std::string>();
     }
-    for (auto &it : json_fields.items()) {
+    for (auto& it : json_fields.items()) {
         json field_conf = it.value();
         Field f;
-        
+
         f.name = it.key();
 
         FieldTypes type;
@@ -91,33 +90,32 @@ std::vector<Field> readFields(const json& j) {
         if (field_conf.contains("choices")) {
             json choices = field_conf["choices"];
 
-            for (auto &it : choices.items()) {
+            for (auto& it : choices.items()) {
                 // Read the items
                 switch (type) {
-                case FieldTypes::STRING: 
-                {
-                    std::string val = it.value().get<std::string>();
-                    std::vector<std::byte> vec;
-                    for (char c : val)  
-                        vec.push_back(static_cast<std::byte>(c));
+                    case FieldTypes::STRING: {
+                        std::string val = it.value().get<std::string>();
+                        std::vector<std::byte> vec;
+                        for (char c : val)
+                            vec.push_back(static_cast<std::byte>(c));
 
-                    f.validChoices.push_back(vec);
-                    break;
-                }
-                case FieldTypes::INTEGER:
-                {
-                    int val = it.value().get<int>();
-                    f.validChoices.push_back(std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int)));
-                    break;
-                }
-                case FieldTypes::BINARY:
-                {
-                    const std::vector<uint8_t> val = it.value();
-                    f.validChoices.push_back(int_to_binary(val));
-                    break;
-                }
-                default:
-                    break;
+                        f.validChoices.push_back(vec);
+                        break;
+                    }
+                    case FieldTypes::INTEGER: {
+                        int val = it.value().get<int>();
+                        f.validChoices.push_back(std::vector<std::byte>(
+                            reinterpret_cast<std::byte*>(&val),
+                            reinterpret_cast<std::byte*>(&val) + sizeof(int)));
+                        break;
+                    }
+                    case FieldTypes::BINARY: {
+                        const std::vector<uint8_t> val = it.value();
+                        f.validChoices.push_back(int_to_binary(val));
+                        break;
+                    }
+                    default:
+                        break;
                 }
             }
         }
@@ -126,34 +124,33 @@ std::vector<Field> readFields(const json& j) {
     return fields;
 }
 
-InputSeed readSeed(const json &j, std::vector<Field> &fields) {
+InputSeed readSeed(const json& j, std::vector<Field>& fields) {
     InputSeed ret;
-    ret.energy = 10;
     for (Field f : fields) {
         if (!j.contains(f.name))
-            throw std::runtime_error("Seed does not contain required field value");
+            throw std::runtime_error(
+                "Seed does not contain required field value");
         InputField inp;
         inp.format = f;
-        FieldTypes type =  f.type;
+        FieldTypes type = f.type;
         switch (type) {
-            case FieldTypes::STRING: 
-            {
+            case FieldTypes::STRING: {
                 std::string val = j[f.name].get<std::string>();
                 std::vector<std::byte> vec;
-                for (char c : val)  
+                for (char c : val)
                     vec.push_back(static_cast<std::byte>(c));
 
                 inp.data = vec;
                 break;
             }
-            case FieldTypes::INTEGER:
-            {
+            case FieldTypes::INTEGER: {
                 int val = j[f.name].get<int>();
-                inp.data = std::vector<std::byte>(reinterpret_cast<std::byte*>(&val), reinterpret_cast<std::byte*>(&val) + sizeof(int));
+                inp.data = std::vector<std::byte>(
+                    reinterpret_cast<std::byte*>(&val),
+                    reinterpret_cast<std::byte*>(&val) + sizeof(int));
                 break;
             }
-            case FieldTypes::BINARY:
-            {
+            case FieldTypes::BINARY: {
                 const std::vector<uint8_t> val = j[f.name];
                 inp.data = int_to_binary(val);
                 break;
