@@ -46,7 +46,7 @@ T random_int(T min, T max) {
 
 std::vector<Input> makeInputsFromSeed(const InputSeed& seed);
 InputSeed mutateSeed(InputSeed seed);
-bool isInteresting(std::array<char, SIZE> data);
+bool isInteresting(std::array<char, SIZE>& data, bool failed);
 
 uint32_t rand32(uint32_t limit) {
     if (limit <= 1)
@@ -166,7 +166,7 @@ int main() {
                 kill(pid, SIGTERM);
                 pid = run_server();
             }
-            if (isInteresting(coverage_arr)) {
+            if (isInteresting(coverage_arr, failed)) {
                 seedQueue.emplace(mutated);
                 std::cout << "Interesting: " << mutated.to_json() << std::endl;
 
@@ -209,13 +209,17 @@ int main() {
     kill(pid, SIGTERM);  // Kill the Python server
 }
 
-bool isInteresting(std::array<char, SIZE> data) {
+bool isInteresting(std::array<char, SIZE>& data, bool failed) {
     // This is a mirror of the array produced by the coverage tool
     // to track which branches have been taken
 
     // Each char element contains the bucket count of the number of times
     // a branch has been taken.
-    static char* tracking = new char[SIZE]();
+    // Separate bucket for failures and succeeds
+    static char* failed_tracking = new char[SIZE]();
+    static char* good_tracking = new char[SIZE]();
+
+    auto tracking = failed ? failed_tracking : good_tracking;
 
     // Bucketing branch transition counts
     bool is_interesting = false;
@@ -260,7 +264,7 @@ bool isInteresting(std::array<char, SIZE> data) {
 
 void assignEnergy(InputSeed& input) {
     // Just assign constant energy
-    const int ENERGY = 100;
+    const int ENERGY = 5;
     input.energy = ENERGY;
 }
 
