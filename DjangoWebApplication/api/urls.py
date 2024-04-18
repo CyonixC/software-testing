@@ -6,6 +6,6 @@ from api.views import *
 
 urlpatterns = [
 
-	re_path("product/((?P<pk>\d+)/)?", ProductView.as_view()),
+	re_path("product/((?P<pk>\d+)/)?", csrf_exempt(ProductView.as_view())),
 
 ]

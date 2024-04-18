@@ -89,6 +89,7 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs)
         }
         else if (input.name == "Token")
         {
+            tkl = input.data.size();
             for (auto &b : input.data)
             {
                 message.push_back(std::to_integer<uint8_t>(b));
@@ -115,8 +116,9 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs)
     }
 
     // Prepend the built header to the message.
+    header |= tkl;
     message.insert(message.begin(), header);
-
+    cout <<< message;
     return message;
 }
 
@@ -205,7 +207,6 @@ int main()
     std::vector<Input> inputs = {
         {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
         {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
-        {std::vector<std::byte>{std::byte(0x04)}, "TKL"},                                                                                                     // Token Length: 4
         {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
         {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
         {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')

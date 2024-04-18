@@ -9,9 +9,6 @@
         "type": "integer",
         "choices": [0,1,2,3]
     },
-    "TKL":{
-        "type": "binary"
-    },
       "Code": {
           "type": "integer",
           "choices": [1, 2, 3, 4]
