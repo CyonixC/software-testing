@@ -37,6 +37,7 @@ pid_t run_server() {
 int run_driver(std::array<char, SIZE> &shm, std::vector<Input>& inputs) {
     char a;
     char b;
+    std::cout << inputVectorToJSON(inputs) << std::endl;
     for (auto &elem : inputs) {
         if (elem.name == "a") {
             a = static_cast<char>(elem.data[0]);

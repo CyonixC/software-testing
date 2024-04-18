@@ -43,10 +43,14 @@
             ]
         },
         "message1": {
-            "type": "binary"
+            "type": "binary",
+            "max_length": 1024,
+            "min_length": 0
         },
         "message2": {
-            "type": "binary"
+            "type": "binary",
+            "max_length": 1024,
+            "min_length": 0
         }
     }
 }

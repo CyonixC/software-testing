@@ -22,7 +22,7 @@
       "Uri-Path": {
           "type": "string",
           "choices": ["/basic", "/storage", "/child", "/separate", "/etag", "/", "/big", "/encoding", "/advancedSeparate", "/void", "/advanced", "/long", "/xml"]
-      },
+      }
 
   }
 }

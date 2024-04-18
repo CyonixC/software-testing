@@ -2,10 +2,14 @@
     "seed_folder": "seed_example",
     "fields": {
         "a": {
-            "type": "integer"
+            "type": "integer",
+            "max_length": 10,
+            "min_length": 1
         },
         "b": {
-            "type": "integer"
+            "type": "integer",
+            "max_length": 10,
+            "min_length": 1
         },
         "c": {
             "type": "binary",
@@ -15,7 +19,9 @@
             ]
         },
         "d": {
-            "type": "string"
+            "type": "string",
+            "max_length": 10,
+            "min_length": 1
         }
     }
 }
