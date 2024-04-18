@@ -72,10 +72,6 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs)
         {
             header |= (std::to_integer<uint8_t>(input.data[0]) << 4);
         }
-        else if (input.name == "TKL")
-        {
-            header |= std::to_integer<uint8_t>(input.data[0]);
-        }
         else if (input.name == "Code")
         {
             message.push_back(std::to_integer<uint8_t>(input.data[0]));
