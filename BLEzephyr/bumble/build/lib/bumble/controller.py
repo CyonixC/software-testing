@@ -51,8 +51,6 @@ from bumble.hci import (
     HCI_AclDataPacketAssembler,
     HCI_Command_Complete_Event,
     HCI_Command_Status_Event,
-    HCI_LE_PHY_Update_Complete_Event,
-    HCI_LE_Connection_Update_Complete_Event,
     HCI_Connection_Complete_Event,
     HCI_Connection_Request_Event,
     HCI_Disconnection_Complete_Event,
@@ -822,7 +820,7 @@ class Controller:
     # HCI handlers
     ############################################################
     def on_hci_command(self, command):
-        logger.warning(color(f' --- Unsupported command {command}', 'red'))
+        logger.warning(color(f'--- Unsupported command {command}', 'red'))
         return bytes([HCI_UNKNOWN_HCI_COMMAND_ERROR])
 
     def on_hci_create_connection_command(self, command):
@@ -1677,54 +1675,3 @@ class Controller:
         See Bluetooth spec Vol 4, Part E - 7.8.110 LE Remove ISO Data Path Command
         '''
         return struct.pack('<BH', HCI_SUCCESS, command.connection_handle)
-
-    def on_hci_le_set_phy_command(self, command):
-        
-        if self.link is None:
-            return
-
-        self.send_hci_packet(
-            HCI_Command_Status_Event(
-                status=HCI_COMMAND_STATUS_PENDING,
-                num_hci_command_packets=1,
-                command_opcode=command.op_code,
-            )
-        )
-
-        self.send_hci_packet(
-            HCI_LE_PHY_Update_Complete_Event(
-                status=HCI_SUCCESS,
-                connection_handle=command.connection_handle,
-                tx_phy=command.tx_phys,
-                rx_phy=command.rx_phys
-            )
-        )
-        return
-
-    def on_hci_le_connection_update_command(self, command):
-        
-        if self.link is None:
-            return
-
-        self.send_hci_packet(
-            HCI_Command_Status_Event(
-                status=HCI_COMMAND_STATUS_PENDING,
-                num_hci_command_packets=1,
-                command_opcode=command.op_code,
-            )
-        )
-
-        self.send_hci_packet(
-            HCI_LE_Connection_Update_Complete_Event(
-                status=HCI_SUCCESS,
-                connection_handle=command.connection_handle,
-                connection_interval=command.connection_interval_min,
-                peripheral_latency=command.max_latency,
-                supervision_timeout=command.supervision_timeout
-            )
-        )
-        return
-    
-    def on_hci_host_number_of_completed_packets_command(self, command):
-
-        return

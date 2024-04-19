@@ -1103,8 +1103,8 @@ class Client:
         subscribers = self.notification_subscribers.get(
             notification.attribute_handle, set()
         )
-        # if not subscribers:
-        #     logger.warning('!!! received notification with no subscriber')
+        if not subscribers:
+            logger.warning('!!! received notification with no subscriber')
 
         self.cache_value(notification.attribute_handle, notification.attribute_value)
         for subscriber in subscribers:

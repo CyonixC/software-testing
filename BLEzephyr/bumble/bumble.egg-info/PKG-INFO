@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: bumble
-Version: 0.0.186.dev6+gde8f3d9.d20240419
+Version: 0.0.186.dev6+gde8f3d9
 Summary: Bluetooth Stack for Apps, Emulation, Test and Experimentation
 Home-page: https://github.com/google/bumble
 Author: Google

@@ -92,12 +92,12 @@ class AclPacketQueue:
 
     def on_packets_completed(self, packet_count: int) -> None:
         if packet_count > self.in_flight:
-            # logger.warning(
-            #     color(
-            #         '!!! {packet_count} completed but only '
-            #         f'{self.in_flight} in flight'
-            #     )
-            # )
+            logger.warning(
+                color(
+                    '!!! {packet_count} completed but only '
+                    f'{self.in_flight} in flight'
+                )
+            )
             packet_count = self.in_flight
 
         self.in_flight -= packet_count

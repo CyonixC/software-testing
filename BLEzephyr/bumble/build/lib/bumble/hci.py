@@ -678,9 +678,9 @@ HCI_LE_2M_PHY    = 2
 HCI_LE_CODED_PHY = 3
 
 HCI_LE_PHY_NAMES = {
-    HCI_LE_1M_PHY:    'LE_1M_PHY',
-    HCI_LE_2M_PHY:    'LE_2M_PHY',
-    HCI_LE_CODED_PHY: 'LE_CODED_PHY'
+    HCI_LE_1M_PHY:    'LE 1M',
+    HCI_LE_2M_PHY:    'LE 2M',
+    HCI_LE_CODED_PHY: 'LE Coded'
 }
 
 HCI_LE_1M_PHY_BIT    = 0
