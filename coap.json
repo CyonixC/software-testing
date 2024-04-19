@@ -7,24 +7,30 @@
     },
     "Type":{
         "type": "integer",
-        "choices": [0,1,2,3]
-    },
-    "TKL":{
-        "type": "binary"
+        "choices": [0]
     },
     "Code": {
         "type": "integer",
         "choices": [1, 2, 3, 4]
     },
     "MessageID": {
-        "type": "integer"
+        "type": "integer",
+        "max_length": 16,
+        "min_length": 0
+
     },
     "Token": {
-        "type": "binary"
+        "type": "binary",
+        "max_length": 8,
+        "min_length": 0
     },
     "Uri-Path": {
         "type": "string",
         "choices": ["/basic", "/storage", "/child", "/separate", "/etag", "/", "/big", "/encoding", "/advancedSeparate", "/void", "/advanced", "/long", "/xml"]
+    },
+    "Payload":{
+        "type": "string"
+
     }
   }
 }

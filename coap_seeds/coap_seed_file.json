@@ -4,5 +4,7 @@
     "MessageID": 43,
     "Code": 1,
     "Token": [123, 15, 64, 17, 123],
-    "Uri-Path": "/basic"
+    "TKL": [4],
+    "Uri-Path": "/basic",
+    "Payload": "Hello"
 }

@@ -56,65 +56,62 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char *filename)
 }
 
 // Function to construct the CoAP message using the Input vector.
-std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs)
-{
-    std::vector<uint8_t> message;
-    // The first byte of the CoAP header includes version, type, and token length (TKL).
-    uint8_t header = 0x00; // Will be built up from the inputs.
+std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs) {
+    // Placeholder for header fields
+    uint8_t ver = 0x01; // Default version is 1
+    uint8_t type = 0x00; // Default type is 0 (CON)
+    uint8_t tkl = 0x00; // Initialize TKL to zero
+    uint8_t code = 0x00; // Initialize Code to zero
+    std::vector<uint8_t> messageId;
+    std::vector<uint8_t> token;
+    std::vector<uint8_t> options;
+    std::vector<uint8_t> payload;
 
-    for (const auto &input : inputs)
-    {
-        if (input.name == "Version")
-        {
-            header |= (std::to_integer<uint8_t>(input.data[0]) << 6);
-        }
-        else if (input.name == "Type")
-        {
-            header |= (std::to_integer<uint8_t>(input.data[0]) << 4);
-        }
-        else if (input.name == "Code")
-        {
-            message.push_back(std::to_integer<uint8_t>(input.data[0]));
-        }
-        else if (input.name == "MessageID")
-        {
-            for (auto &b : input.data)
-            {
-                message.push_back(std::to_integer<uint8_t>(b));
+    // Parse inputs to collect CoAP fields
+    for (const auto &input : inputs) {
+    if (input.name == "Type") {
+            type = std::to_integer<uint8_t>(input.data[0]);
+        } else if (input.name == "TKL") {
+            tkl = std::to_integer<uint8_t>(input.data[0]);
+        } else if (input.name == "Code") {
+            code = std::to_integer<uint8_t>(input.data[0]);
+        } else if (input.name == "MessageID") {
+            for (auto &b : input.data) {
+                messageId.push_back(std::to_integer<uint8_t>(b));
+            }
+        } else if (input.name == "Token") {
+            for (auto &b : input.data) {
+                token.push_back(std::to_integer<uint8_t>(b));
+            }
+        } else if (input.name == "Options") {
+            // Here we would need to implement logic to correctly serialize the options
+        } else if (input.name == "Payload") {
+            // Payload is preceded by a marker if there is a payload and options are present
+            if (!input.data.empty()) {
+                payload.push_back(0xFF); // Payload marker
+                for (auto &b : input.data) {
+                    payload.push_back(std::to_integer<uint8_t>(b));
+                }
             }
         }
-        else if (input.name == "Token")
-        {
-            tkl = input.data.size();
-            for (auto &b : input.data)
-            {
-                message.push_back(std::to_integer<uint8_t>(b));
-            }
-        }
-        else if (input.name == "Uri-Path")
-        {
-            // Assuming Uri-Path is a single option and input data does not include option header.
-            message.push_back(0xB0 | 0x0B);       // Option delta for Uri-Path
-            message.push_back(input.data.size()); // Option length
-            for (auto &b : input.data)
-            {
-                message.push_back(std::to_integer<uint8_t>(b));
-            }
-        }
-        else if (input.name == "Payload")
-        {
-            for (auto &b : input.data)
-            {
-                message.push_back(std::to_integer<uint8_t>(b));
-            }
-        }
-        // Include additional cases as needed for other CoAP message components.
     }
 
-    // Prepend the built header to the message.
-    header |= tkl;
-    message.insert(message.begin(), header);
-    cout <<< message;
+    // Ensure TKL matches the token length
+    tkl = static_cast<uint8_t>(token.size());  // Ensure this happens after the last modification to `token`
+    std::cout << "Current Token Length: " << token.size() << std::endl;
+
+    // Construct the message header
+    uint8_t header = (ver << 6) | (type << 4) | tkl;
+
+    // Construct the complete CoAP message
+    std::vector<uint8_t> message;
+    message.push_back(header);
+    message.push_back(code);
+    message.insert(message.end(), messageId.begin(), messageId.end());
+    message.insert(message.end(), token.begin(), token.end());
+    // Options would be added here, after implementing options serialization logic
+    message.insert(message.end(), payload.begin(), payload.end());
+
     return message;
 }
 
@@ -197,20 +194,27 @@ int run_driver(std::array<char, SIZE> &shm, std::vector<Input>& inputs) {
 
     std::cout << inputVectorToJSON(inputs);
 
-    // Define the example inputs for the various parts of the CoAP message.
-    std::vector<Input> inputs = {
-        {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
-        {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
-        {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
-        {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
-        {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
-        {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
-        //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
-    };
+    // // Define the example inputs for the various parts of the CoAP message.
+    // std::vector<Input> inputs = {
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
+    //     {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
+    //     {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
+    //     {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
+    //     {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
+    //     //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
+    // };
 
     // Create the CoAP message.
     std::vector<uint8_t> coapMessage = createCoapMessage(inputs);
+    // Print each byte in hex format
+for (uint8_t byte : coapMessage) {
+    // Print byte in hex with leading zeros, formatted as width of 2
+    std::cout << std::hex << std::setw(2) << std::setfill('0') 
+              << static_cast<int>(byte) << ' ';
+}
 
+std::cout << std::dec << std::endl; // Reset std::cout to decimal
     // Send the CoAP message over UDP and handle the response.
     int result = sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
 
@@ -240,7 +244,7 @@ pid_t run_server() {
             (char*)"backtrace",
             (char*)"--args",
             (char*)"python2",
-            (char*)"coapserver.py",
+            (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",
             (char*)"-p",
