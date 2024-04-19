@@ -6,3 +6,5 @@ fuzz_out/
 *.gcda
 __pycache__/
 *.info
+
+!BLEzephyr/bumble/*
