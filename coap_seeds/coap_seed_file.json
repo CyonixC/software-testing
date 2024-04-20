@@ -1,7 +1,7 @@
 {
     "Version": 1,
     "Type": 0,
-    "MessageID": 43,
+    "MessageID": [43],
     "Code": 1,
     "Token": [123, 15, 64, 17, 123],
     "TKL": [4],

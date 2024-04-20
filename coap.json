@@ -14,8 +14,8 @@
         "choices": [1, 2, 3, 4]
     },
     "MessageID": {
-        "type": "integer",
-        "max_length": 16,
+        "type": "binary",
+        "max_length": 2,
         "min_length": 0
 
     },

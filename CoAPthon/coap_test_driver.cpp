@@ -64,6 +64,7 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs) {
     uint8_t code = 0x00; // Initialize Code to zero
     std::vector<uint8_t> messageId;
     std::vector<uint8_t> token;
+    std::vector<uint8_t> uri_path;
     std::vector<uint8_t> options;
     std::vector<uint8_t> payload;
 
@@ -82,6 +83,20 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs) {
         } else if (input.name == "Token") {
             for (auto &b : input.data) {
                 token.push_back(std::to_integer<uint8_t>(b));
+            }
+        } else if (input.name == "Uri-Path") {
+            // Need to check the size of the Uri-Path to determine if it needs to be extended or not
+            if (input.data.size() > 12) {
+                // if the Uri-Path is longer than 12 bytes, the option header needs to be extended
+                uri_path.push_back(0xBD); // "B" to mark the URI-Path option, and "D" to indicate the extension
+                uri_path.push_back(input.data.size() - 13); // The length of the extended URI-Path (minus the first 13 bytes)
+            } else {
+                // No extension needed, construct the normal header
+                uri_path.push_back((0xB0 + input.data.size())); // "B" to mark the URI-Path option, and the last 4 bits is the length
+            }
+
+            for (auto &b : input.data) {
+                uri_path.push_back(std::to_integer<uint8_t>(b));
             }
         } else if (input.name == "Options") {
             // Here we would need to implement logic to correctly serialize the options
@@ -106,11 +121,43 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input> &inputs) {
     // Construct the complete CoAP message
     std::vector<uint8_t> message;
     message.push_back(header);
+    std::cout << std::hex << std::setw(2) << std::setfill('0');
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
+
     message.push_back(code);
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
+
     message.insert(message.end(), messageId.begin(), messageId.end());
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
+
     message.insert(message.end(), token.begin(), token.end());
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
     // Options would be added here, after implementing options serialization logic
+
+    message.insert(message.end(), uri_path.begin(), uri_path.end());
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
+
     message.insert(message.end(), payload.begin(), payload.end());
+    for (uint8_t byte : message) {
+            std::cout << static_cast<int>(byte) << ' ';
+    }
+    std::cout << std::endl;
+    std::cout << std::dec << std::endl;
 
     return message;
 }
@@ -249,6 +296,9 @@ pid_t run_server() {
             (char*)"127.0.0.1",
             (char*)"-p",
             (char*)"5683",
+            (char*)">",
+            (char*)"/dev/null",
+            (char*)"2>&1",
             NULL
         };
         execvp(args[0], args);
