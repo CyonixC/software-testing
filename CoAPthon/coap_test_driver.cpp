@@ -124,43 +124,43 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input>& inputs) {
     // Construct the complete CoAP message
     std::vector<uint8_t> message;
     message.push_back(header);
-    std::cout << std::hex << std::setw(2) << std::setfill('0');
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
+    // std::cout << std::hex << std::setw(2) << std::setfill('0');
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
 
     message.push_back(code);
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
 
     message.insert(message.end(), messageId.begin(), messageId.end());
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
 
     message.insert(message.end(), token.begin(), token.end());
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
     // Options would be added here, after implementing options serialization logic
 
     message.insert(message.end(), uri_path.begin(), uri_path.end());
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
 
     message.insert(message.end(), payload.begin(), payload.end());
-    for (uint8_t byte : message) {
-        std::cout << static_cast<int>(byte) << ' ';
-    }
-    std::cout << std::endl;
-    std::cout << std::dec << std::setw(0) << std::setfill(' ');
+    // for (uint8_t byte : message) {
+    //     std::cout << static_cast<int>(byte) << ' ';
+    // }
+    // std::cout << std::endl;
+    // std::cout << std::dec << std::setw(0) << std::setfill(' ');
 
     return message;
 }
@@ -258,7 +258,7 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
                   << static_cast<int>(byte) << ' ';
     }
 
-    std::cout << std::dec << std::endl;  // Reset std::cout to decimal
+    std::cout << std::dec << std::setw(0) << std::setfill(' ');
     // Send the CoAP message over UDP and handle the response.
     int result =
         sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
@@ -298,7 +298,7 @@ pid_t run_server() {
             (char*)"-ex",
             (char*)"backtrace",
             (char*)"--args",
-            (char*)"/home/professor_a/.pyenv/versions/2.7.18/bin/python",
+            (char*)"/home/javin/.pyenv/versions/coap/bin/python",
             (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",
