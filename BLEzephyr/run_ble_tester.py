@@ -44,7 +44,7 @@ async def write_target(target, attribute, bytes):
         # print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
         return True
     except ProtocolError as error:
-        pass
+        return True
         # print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
     except asyncio.TimeoutError:
         pass
@@ -60,7 +60,7 @@ async def read_target(target, attribute):
         # print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
         return True
     except ProtocolError as error:
-        pass
+        return True
         # print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
         return True
     except asyncio.TimeoutError:
