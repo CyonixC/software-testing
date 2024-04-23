@@ -10,16 +10,16 @@ ifdef DEBUG
 endif
 
 sample: fuzz_main.cpp inputs.cpp crc16.c sample_program.cpp config.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c sample_program.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c sample_program.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/input_config_example.json"
 
 coap: fuzz_main.cpp inputs.cpp crc16.c config.cpp CoAPthon/coap_test_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/coap.json"
 
 ble: fuzz_main.cpp inputs.cpp crc16.c config.cpp BLEzephyr/ble_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c BLEzephyr/ble_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c BLEzephyr/ble_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/ble.json"
 
 django: fuzz_main.cpp inputs.cpp crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c DjangoWebApplication/django_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c DjangoWebApplication/django_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/django.json"
 
 django_test: inputs.cpp crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp
 	g++ inputs.cpp sqlite3.o crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp -o DjangoWebApplication/test.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
