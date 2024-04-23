@@ -5,6 +5,7 @@ ble_4: Fuzzing with BASE = 5, exponential energy
 ble_4: Fuzzing with BASE = 1, exponential energy
 ble_5: Fuzzing with BASE = 1, exponential energy
 ble_6: Fuzzing with BASE = 1, exponential energy
+ble_7: Fuzzing with BASE = 1, exponential energy
 
 coap_1: FUZZING with BASE = 5, exponential energy
 coap_2: FUZZING with BASE = 5, exponential energy

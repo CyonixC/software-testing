@@ -28,12 +28,12 @@ plt.plot(df['Time'], df['Cumulative_All'], label='All')
 
 eff_df = pd.read_csv(effi_path, names=['Time', 'Seed_Gen', 'Interesting', 'Crashes', 'Mut_Time', 'Driv_Time'])
 stats = f'Total seed/runs: {eff_df["Seed_Gen"].sum()}\n'
-stats += f'Avg time (s): {((eff_df["Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
+stats += f'Avg time (ms): {((eff_df["Time"].sum()/eff_df["Seed_Gen"].sum())):.4f}\n'
 stats += f'Total interesting: {eff_df["Interesting"].sum()}\n'
 stats += f'Total crash: {eff_df["Crashes"].sum()}\n'
 stats += f'Crash input ratio: {(eff_df["Crashes"].sum()/eff_df["Seed_Gen"].sum()):.4f}\n'
-stats += f'Avg mutation time(s): {((eff_df["Mut_Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
-stats += f'Avg driver time(s): {((eff_df["Driv_Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
+stats += f'Avg mutation time(ms): {((eff_df["Mut_Time"].sum()/eff_df["Seed_Gen"].sum())):.4f}\n'
+stats += f'Avg driver time(ms): {((eff_df["Driv_Time"].sum()/eff_df["Seed_Gen"].sum())):.4f}'
 
 plt.text(df['Time'].max() * 0.8, 0, stats, fontsize=10, bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
 
