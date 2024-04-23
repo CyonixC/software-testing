@@ -1,5 +1,5 @@
 {
-    "seed_folder": "django_seed_file",
+    "seed_folder": "django_seeds",
     "fields": {
       "method":{
           "type": "string",
@@ -7,7 +7,10 @@
       },
       "url":{
         "type": "string",
-        "choices": ["/","/add","/delete","/edit","/export", "/?search="] 
+        "choices": ["/datab/product","/datab/product/add","/datab/product/delete","/datab/product/edit","/datab/product/export"] 
+      },
+      "index":{
+        "type": "integer"
       },
       "Cookie":{
         "type": "string"
@@ -18,7 +21,7 @@
       },
       "headers":{
         "type": "binary",
-        "choices": [0, 1]       
+        "choices": [[0], [1]]       
       },
         "name": {
             "type": "string"
@@ -27,7 +30,7 @@
             "type": "string"
         },
         "price": {
-            "type": "integer"
+            "type": "binary"
         }
   
     }
