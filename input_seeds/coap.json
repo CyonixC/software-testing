@@ -1,36 +1,48 @@
 {
-  "seed_folder": "coap_seeds",
+  "seed_folder": "./input_seeds/coap_seeds",
   "fields": {
-    "Version":{
-        "type": "integer",
-        "choices": [1]
+    "Version": {
+      "type": "integer",
+      "choices": [1]
     },
-    "Type":{
-        "type": "integer",
-        "choices": [0]
+    "Type": {
+      "type": "integer",
+      "choices": [0]
     },
     "Code": {
-        "type": "integer",
-        "choices": [1, 2, 3, 4]
+      "type": "integer",
+      "choices": [1, 2, 3, 4]
     },
     "MessageID": {
-        "type": "binary",
-        "max_length": 2,
-        "min_length": 0
-
+      "type": "binary",
+      "max_length": 2,
+      "min_length": 0
     },
     "Token": {
-        "type": "binary",
-        "max_length": 8,
-        "min_length": 0
+      "type": "binary",
+      "max_length": 8,
+      "min_length": 0
     },
     "Uri-Path": {
-        "type": "string",
-        "choices": ["/basic", "/storage", "/child", "/separate", "/etag", "/", "/big", "/encoding", "/advancedSeparate", "/void", "/advanced", "/long", "/xml"]
+      "type": "string",
+      "choices": [
+        "/basic",
+        "/storage",
+        "/child",
+        "/separate",
+        "/etag",
+        "/",
+        "/big",
+        "/encoding",
+        "/advancedSeparate",
+        "/void",
+        "/advanced",
+        "/long",
+        "/xml"
+      ]
     },
-    "Payload":{
-        "type": "string"
-
+    "Payload": {
+      "type": "string"
     }
   }
 }
