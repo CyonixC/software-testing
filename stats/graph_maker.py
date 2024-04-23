@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 data_path = "./fuzz_out/" + "time"
 effi_path = "./fuzz_out/" + "effi"
-output_name = "ble_7"
+output_name = "ble_8"
 
 output_img_name = "./stats/" + output_name + ".png"
 output_data_name = "./stats/" + output_name + ".csv"

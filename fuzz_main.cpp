@@ -342,7 +342,7 @@ void assignEnergy(InputSeed& input, int seed_count) {
     const int BASE_ENERGY = 1;
 
     // If it's above average, don't fuzz it again
-    if (chosen_count_total / seed_count > input.chosen_count) {
+    if (input.chosen_count > chosen_count_total / seed_count) {
         input.energy = 0;
         return;
     }
