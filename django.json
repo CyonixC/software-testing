@@ -1,0 +1,37 @@
+{
+  "seed_folder": "django_seeds",
+  "fields": {
+    "method":{
+        "type": "string",
+        "choices": ["POST","GET","PUT","DELETE"]
+    },
+    "url":{
+      "type": "string",
+      "choices": ["/datab/product","/datab/product/add","/datab/product/delete","/datab/product/edit","/datab/product/export"] 
+    },
+    "index":{
+      "type": "integer"
+    },
+    "Cookie":{
+      "type": "string"
+
+    },
+    "Session":{
+      "type": "string"
+    },
+    "headers":{
+      "type": "binary",
+      "choices": [[0], [1]]       
+    },
+      "name": {
+          "type": "string"
+      },
+      "info": {
+          "type": "string"
+      },
+      "price": {
+          "type": "binary"
+      }
+
+  }
+}

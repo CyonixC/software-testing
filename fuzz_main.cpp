@@ -153,7 +153,7 @@ int main() {
     pid_t pid = run_server();
     printf("Server started\n");
     sleep(
-        1);  // Wait for the server to start, on actual should probably use a signal or something
+        5);  // Wait for the server to start, on actual should probably use a signal or something
 
     unsigned int interesting_count = 0;
     unsigned int crash_count = 0;

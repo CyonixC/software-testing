@@ -5,6 +5,16 @@ name = "pypi"
 
 [packages]
 coverage = "*"
+bumble = "*"
+django = "==4.1.12"
+python-dotenv = "==1.0.0"
+django-admin-datta = "==1.0.10"
+django-dynamic-datatb = "==1.0.25"
+django-api-generator = "==1.0.17"
+django-debug-toolbar = "==4.2.0"
+whitenoise = "==6.5.0"
+gunicorn = "==21.2.0"
+bs4 = "*"
 
 [dev-packages]
 

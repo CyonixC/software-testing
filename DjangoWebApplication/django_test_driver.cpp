@@ -1,8 +1,8 @@
-// #include <arpa/inet.h>
-// #include <fcntl.h>
-// #include <sqlite3.h>
-// #include <sys/select.h>  // For select() and FD_SET
-// #include <sys/socket.h>  // For socket, sendto, and close
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <sqlite3.h>
+#include <sys/select.h>  // For select() and FD_SET
+#include <sys/socket.h>  // For socket, sendto, and close
 #include <unistd.h>      // For close
 #include <array>
 #include <cerrno>   // For errno
@@ -17,14 +17,6 @@
 #include <vector>
 #include "../checksum.h"
 #include "../driver.h"
-
-struct Input {
-    std::string name;
-    std::vector<uint8_t> data;
-
-    Input(const std::string& name, const std::string& value)
-        : name(name), data(value.begin(), value.end()) {}
-};
 
 int hash_cov_into_shm(std::array<char, SIZE>& shm, const char* filename) {
     sqlite3* db;
@@ -76,31 +68,71 @@ std::string urlEncode(const std::string& value) {
     return escaped.str();
 }
 std::string createHttpRequest(const std::vector<Input>& inputs) {
-    std::string method = "GET"; // Default HTTP method
-    std::string url = "/";      // Default URI
     std::map<std::string, std::string> headers;
     std::ostringstream body;
+    std::string method{};
+    std::string url{};
+    std::string cookie{};
+    std::string sessionID{};
+    std::string index{};
 
     for (const auto& input : inputs) {
         if (input.name == "method") {
-            method = std::string(input.data.begin(), input.data.end());
+            method.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                method.push_back(static_cast<char>(b));
+            }
+        } 
+        else if(input.name == "index"){
+            index.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                index.push_back(static_cast<char>(b));
+            }
         } else if (input.name == "url") {
-            url = std::string(input.data.begin(), input.data.end());
+          
+            url.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                url.push_back(static_cast<char>(b));
+            }
+           
         } else if (input.name == "Cookie") {
-            headers["Cookie"] = "csrftoken=" + std::string(input.data.begin(), input.data.end());
-        } else if (input.name == "Session") {
-           headers["Cookie"] += "; sessionid=" + std::string(input.data.begin(), input.data.end())+";";
+            cookie.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                cookie.push_back(static_cast<char>(b));
+            }
+        } else if (input.name == "SessionID") {
+            sessionID.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                sessionID.push_back(static_cast<char>(b));
+            }
         } else {
             // Handle body parameters
             if (!body.str().empty()) body << "&";
-            body << input.name << "=" << urlEncode(std::string(input.data.begin(), input.data.end()));
+            std::string temp;
+            temp.reserve(input.data.size()); // Reserve space to avoid reallocation
+
+            for (std::byte b : input.data) {
+                temp.push_back(static_cast<char>(b));
+            }
+            
+            body << input.name << "=" << urlEncode(temp);
         }
     }
+    
+    if(url!="/datab/product" ||url !="/datab/product/add"){
+        url += "/"+index+"/";
+    }
+    headers["Cookie"] = "csrftoken=" + cookie + "; sessionid="  + sessionID;
 
     std::string bodyStr = body.str();
 
     std::ostringstream request;
-    request << method << " " << uri << " HTTP/1.1\r\n";
+    request << method << " " << url << " HTTP/1.1\r\n";
     for (const auto& header : headers) {
         request << header.first << ": " << header.second << "\r\n";
     }
@@ -195,35 +227,19 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     // Define the CoAP server details.
     std::string coapServerHost = "127.0.0.1";
-    uint16_t coapServerPort = 5683;
-
-    // std::cout << inputVectorToJSON(inputs);
-
-    // // Define the example inputs for the various parts of the CoAP message.
-    // std::vector<Input> inputs = {
-    //     {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
-    //     {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
-    //     {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
-    //     {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
-    //     {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
-    //     {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
-    //     //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
-    // };
+    uint16_t coapServerPort = 8000;
 
     // Create the CoAP message.
-    std::vector<uint8_t> httpMessage = createHttpRequest(inputs);
-    // Print each byte in hex format
-    // for (uint8_t byte : coapMessage) {
-    //     // Print byte in hex with leading zeros, formatted as width of 2
-    //     std::cout << std::hex << std::setw(2) << std::setfill('0')
-    //               << static_cast<int>(byte) << ' ';
-    // }
+    std::string strMsg = createHttpRequest(inputs);
+    std::cout << strMsg << std::endl;
+    
+    std::vector<uint8_t> httpMessage;
+    httpMessage.reserve(strMsg.size());
+    for (char c : strMsg) {
+        httpMessage.push_back(static_cast<uint8_t>(c));
+    }
 
-    // std::cout << std::dec << std::setw(0) << std::setfill(' ');
-    // Send the CoAP message over UDP and handle the response.
-    int result =
-        sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
-    // hash here?
+    int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
     hash_cov_into_shm(shm, "data/.coverage");
 
     // Handle the result as needed
@@ -234,8 +250,12 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
 
     return 0;
 }
-pid_t runDjangoServer(const std::string& managePyPath, const std::string& ipAddress, const std::string& port) {
+pid_t run_server() {
+    std::string managePyPath= "DjangoWebApplication/manage.py";
+    std::string ipAddress = "127.0.0.1";
+    std::string port = "8000";
     pid_t pid = fork();
+    // pid_t pid = 0;
 
     if (pid == -1) {
         std::cerr << "Failed to fork" << std::endl;
@@ -243,12 +263,12 @@ pid_t runDjangoServer(const std::string& managePyPath, const std::string& ipAddr
     } else if (pid == 0) {
         // Child process
         // Redirect stdout and stderr to /dev/null
-        int devNull = open("/dev/null", O_WRONLY);
-        if (devNull == -1 || dup2(devNull, STDOUT_FILENO) == -1 || dup2(devNull, STDERR_FILENO) == -1) {
-            perror("dup2 or open");
-            _exit(EXIT_FAILURE);
-        }
-        close(devNull); // Close the file descriptor as it is no longer needed
+        // int devNull = open("/dev/null", O_WRONLY);
+        // if (devNull == -1 || dup2(devNull, STDOUT_FILENO) == -1 || dup2(devNull, STDERR_FILENO) == -1) {
+        //     perror("dup2 or open");
+        //     _exit(EXIT_FAILURE);
+        // }
+        // close(devNull); // Close the file descriptor as it is no longer needed
 
         // Run Django server
         char* args[] = {
@@ -267,19 +287,39 @@ pid_t runDjangoServer(const std::string& managePyPath, const std::string& ipAddr
     // Parent process
     return pid; // Return the child process ID
 }
-int main() {
-    std::vector<Input> inputs = {
-        Input("Method", "POST"),
-        Input("URI", "/submit-data"),
-        Input("info", "some information"),
-        Input("name", "John Doe"),
-        Input("price", 19.99), // Assuming price is a floating-point value
-        Input("Cookie", "123456"),
-        Input("SessionId", "abcdef")
-    };
+// int main() {
+//     // std::vector<Input> inputs = {
+//     //     Input("Method", "POST"),
+//     //     Input("URL", "/submit-data"),
+//     //     Input("info", "some information"),
+//     //     Input("name", "John Doe"),
+//     //     Input("price", "ab"), // Assuming price is a floating-point value
+//     //     Input("Cookie", "123456"),
+//     //     Input("SessionId", "abcdef")
+//     // };
+//     std::string coapServerHost = "127.0.0.1";
+//     uint16_t coapServerPort = 8000;
 
-    std::string httpRequest = createHttpRequest(inputs);
-    std::cout << "HTTP Request:\n" << httpRequest << std::endl;
+//     std::vector<Input> inputs = {
+//         {std::vector<std::byte>{std::byte('P'), std::byte('O'), std::byte('S'), std::byte('T')}, "Method"},
+//         {std::vector<std::byte>{std::byte('/'), std::byte('t')}, "URL"},
+//         {std::vector<std::byte>{std::byte('t')}, "info"},
+//         {std::vector<std::byte>{std::byte('a'), std::byte('a')}, "name"},
+//         {std::vector<std::byte>{std::byte('4'), std::byte('3'), std::byte('3'), std::byte('3')}, "price"},
+//         {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Cookie"},
+//         {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "SessionId"},
+//     };
 
-    return 0;
-}
+//     // Create the CoAP message.
+//     std::string strMsg = createHttpRequest(inputs);
+    
+//     std::vector<uint8_t> httpMessage;
+//     httpMessage.reserve(strMsg.size());
+//     for (char c : strMsg) {
+//         httpMessage.push_back(static_cast<uint8_t>(c));
+//     }
+
+//     int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
+
+//     return 0;
+// }

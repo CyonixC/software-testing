@@ -134,6 +134,7 @@ int hash_cov_into_shm(std::array<char, SIZE> &shm, const char* filename) {
         }
         shm[crc]++;
     } while (res == SQLITE_ROW);
+    sqlite3_finalize(stmt);
     sqlite3_close(db);
     return 0;
 }
