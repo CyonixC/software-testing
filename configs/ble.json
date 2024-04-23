@@ -1,5 +1,5 @@
 {
-  "seed_folder": "./input_seeds/ble_seeds",
+  "seed_folder": "./configs/ble_seeds",
   "fields": {
     "attribute_num": {
       "type": "integer",

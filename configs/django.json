@@ -1,5 +1,5 @@
 {
-  "seed_folder": "./input_seeds/django_seeds",
+  "seed_folder": "./configs/django_seeds",
   "fields": {
     "method": {
       "type": "string",

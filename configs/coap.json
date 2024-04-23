@@ -1,5 +1,5 @@
 {
-  "seed_folder": "./input_seeds/coap_seeds",
+  "seed_folder": "./configs/coap_seeds",
   "fields": {
     "Version": {
       "type": "integer",
