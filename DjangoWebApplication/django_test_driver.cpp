@@ -25,7 +25,24 @@ struct Input {
     Input(const std::string& name, const std::string& value)
         : name(name), data(value.begin(), value.end()) {}
 };
+std::string urlEncode(const std::string& value) {
+    std::ostringstream escaped;
+    escaped.fill('0');
+    escaped << std::hex;
 
+    for (char c : value) {
+        if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            escaped << c;
+            continue;
+        }
+
+        escaped << std::uppercase;
+        escaped << '%' << std::setw(2) << int((unsigned char)c);
+        escaped << std::nouppercase;
+    }
+
+    return escaped.str();
+}
 std::string createHttpRequest(const std::vector<Input>& inputs) {
     std::string method = "GET"; // Default HTTP method
     std::string url = "/";      // Default URI
