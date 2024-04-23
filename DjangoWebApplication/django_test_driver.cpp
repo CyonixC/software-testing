@@ -89,7 +89,7 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
         } else if (input.name == "Cookie") {
             headers["Cookie"] = "csrftoken=" + std::string(input.data.begin(), input.data.end());
         } else if (input.name == "Session") {
-            headers["Session-ID"] = "sessionid=" + std::string(input.data.begin(), input.data.end());
+           headers["Cookie"] += "; sessionid=" + std::string(input.data.begin(), input.data.end())+";";
         } else {
             // Handle body parameters
             if (!body.str().empty()) body << "&";
