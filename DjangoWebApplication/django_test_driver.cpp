@@ -25,6 +25,38 @@ struct Input {
     Input(const std::string& name, const std::string& value)
         : name(name), data(value.begin(), value.end()) {}
 };
+
+int hash_cov_into_shm(std::array<char, SIZE>& shm, const char* filename) {
+    sqlite3* db;
+    char* zErrMsg = 0;
+    int rc;
+    rc = sqlite3_open(filename, &db);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+        return (0);
+    } else {
+        // fprintf(stderr, "Opened database successfully\n");
+    }
+
+    const char* sql = "SELECT * from arc";
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    int ncols = sqlite3_column_count(stmt);
+    int res;
+    do {
+        res = sqlite3_step(stmt);
+        uint16_t crc = 0;
+        for (int i = 0; i < ncols; i++) {
+            int item = sqlite3_column_int(stmt, i);
+            crc = update_crc_16(crc, item);
+        }
+        shm[crc]++;
+    } while (res == SQLITE_ROW);
+    sqlite3_finalize(stmt);
+    int res1 = sqlite3_close(db);
+    return 0;
+}
+
 std::string urlEncode(const std::string& value) {
     std::ostringstream escaped;
     escaped.fill('0');
@@ -159,6 +191,81 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     // Close the socket
     close(sockfd);
     return 0; // Success
+}
+int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
+    // Define the CoAP server details.
+    std::string coapServerHost = "127.0.0.1";
+    uint16_t coapServerPort = 5683;
+
+    // std::cout << inputVectorToJSON(inputs);
+
+    // // Define the example inputs for the various parts of the CoAP message.
+    // std::vector<Input> inputs = {
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
+    //     {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
+    //     {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
+    //     {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
+    //     {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
+    //     {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
+    //     //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
+    // };
+
+    // Create the CoAP message.
+    std::vector<uint8_t> httpMessage = createHttpRequest(inputs);
+    // Print each byte in hex format
+    // for (uint8_t byte : coapMessage) {
+    //     // Print byte in hex with leading zeros, formatted as width of 2
+    //     std::cout << std::hex << std::setw(2) << std::setfill('0')
+    //               << static_cast<int>(byte) << ' ';
+    // }
+
+    // std::cout << std::dec << std::setw(0) << std::setfill(' ');
+    // Send the CoAP message over UDP and handle the response.
+    int result =
+        sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
+    // hash here?
+    hash_cov_into_shm(shm, "data/.coverage");
+
+    // Handle the result as needed
+    if (result == 1) {
+        std::cout << "Timeout occurred or no response received." << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+pid_t runDjangoServer(const std::string& managePyPath, const std::string& ipAddress, const std::string& port) {
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::cerr << "Failed to fork" << std::endl;
+        return -1; // return an error code
+    } else if (pid == 0) {
+        // Child process
+        // Redirect stdout and stderr to /dev/null
+        int devNull = open("/dev/null", O_WRONLY);
+        if (devNull == -1 || dup2(devNull, STDOUT_FILENO) == -1 || dup2(devNull, STDERR_FILENO) == -1) {
+            perror("dup2 or open");
+            _exit(EXIT_FAILURE);
+        }
+        close(devNull); // Close the file descriptor as it is no longer needed
+
+        // Run Django server
+        char* args[] = {
+            (char*)"python3",
+            (char*)managePyPath.c_str(),
+            (char*)"runserver",
+            (char*)(ipAddress + ":" + port).c_str(),
+            NULL
+        };
+        execvp(args[0], args);
+        // If execvp returns, there was an error
+        std::cerr << "Failed to execute Django server" << std::endl;
+        _exit(EXIT_FAILURE); // Use _exit in child after fork
+    }
+
+    // Parent process
+    return pid; // Return the child process ID
 }
 int main() {
     std::vector<Input> inputs = {
