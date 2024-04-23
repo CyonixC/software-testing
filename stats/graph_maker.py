@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 data_path = "./fuzz_out/" + "time"
-output_name = "my_graph"
+effi_path = "./fuzz_out/" + "effi"
+output_name = "ble_7"
 
 output_img_name = "./stats/" + output_name + ".png"
 output_data_name = "./stats/" + output_name + ".csv"
@@ -23,6 +24,18 @@ plt.figure(figsize=(10, 6))
 plt.plot(df['Time'], df['Cumulative_I'], label='Interesting')
 plt.plot(df['Time'], df['Cumulative_C'], label='Crash')
 plt.plot(df['Time'], df['Cumulative_All'], label='All')
+
+
+eff_df = pd.read_csv(effi_path, names=['Time', 'Seed_Gen', 'Interesting', 'Crashes', 'Mut_Time', 'Driv_Time'])
+stats = f'Total seed/runs: {eff_df["Seed_Gen"].sum()}\n'
+stats += f'Avg time (s): {((eff_df["Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
+stats += f'Total interesting: {eff_df["Interesting"].sum()}\n'
+stats += f'Total crash: {eff_df["Crashes"].sum()}\n'
+stats += f'Crash input ratio: {(eff_df["Crashes"].sum()/eff_df["Seed_Gen"].sum()):.4f}\n'
+stats += f'Avg mutation time(s): {((eff_df["Mut_Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
+stats += f'Avg driver time(s): {((eff_df["Driv_Time"].sum()/eff_df["Seed_Gen"].sum())/1000):.4f}\n'
+
+plt.text(df['Time'].max() * 0.8, 0, stats, fontsize=10, bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.5))
 
 plt.xlabel('Time')
 plt.ylabel('Cumulative Occurrences')

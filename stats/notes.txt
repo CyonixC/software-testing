@@ -1,7 +1,10 @@
-ble_1: Fuzzing with BASE = 1, exponential energy
+ble_1: Fuzzing with BASE = 1, exponential energy. Starting input is 1 len.
 ble_2: Fuzzing with BASE = 5, exponential energy
 ble_3: Fuzzing with BASE = 5, exponential energy
 ble_4: Fuzzing with BASE = 5, exponential energy
+ble_4: Fuzzing with BASE = 1, exponential energy
+ble_5: Fuzzing with BASE = 1, exponential energy
+ble_6: Fuzzing with BASE = 1, exponential energy
 
 coap_1: FUZZING with BASE = 5, exponential energy
 coap_2: FUZZING with BASE = 5, exponential energy

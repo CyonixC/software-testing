@@ -307,7 +307,7 @@ pid_t run_server() {
             (char*)"-ex",
             (char*)"backtrace",
             (char*)"--args",
-            (char*)"/home/javin/.pyenv/versions/coap/bin/python",
+            (char*)"/home/professor_a/.pyenv/versions/2.7.18/bin/python",
             (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",
