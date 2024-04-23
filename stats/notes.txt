@@ -1,0 +1,2 @@
+ble1.png: Fuzzing with BASE = 5, without mutation op 15.
+ble2.png: Fuzzing with BASE = 5, and mutation op 15.

@@ -2,7 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 data_path = "./fuzz_out/" + "time"
-output_path = "./stats/" + "some_test.png"
+output_name = "my_graph"
+
+output_img_name = "./stats/" + output_name + ".png"
+output_data_name = "./stats/" + output_name + ".csv"
+
 
 # Parse data into a DataFrame
 df = pd.read_csv(data_path, names=['Type', 'Time'])
@@ -28,4 +32,6 @@ plt.grid(True)
 
 plt.xlabel('Time (seconds)')
 plt.ylabel('Cumulative Paths Found')
-plt.savefig(output_path)
+plt.savefig(output_img_name)
+
+df.to_csv(output_data_name, index=True)
