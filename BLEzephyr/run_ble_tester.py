@@ -62,7 +62,6 @@ async def read_target(target, attribute):
     except ProtocolError as error:
         return True
         # print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
-        return True
     except asyncio.TimeoutError:
         pass
         # print(color('[!] Read Timeout'))
