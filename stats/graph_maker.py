@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 data_path = "./fuzz_out/" + "time"
-output_path = "./stats/" + "ble2.png"
+output_path = "./stats/" + "some_test.png"
 
 # Parse data into a DataFrame
 df = pd.read_csv(data_path, names=['Type', 'Time'])
