@@ -1,0 +1,10 @@
+{
+    "method": "POST",
+    "name": "toy",
+    "info": "blue",
+    "price": [1.5],
+    "url": "/add",
+    "headers": [1],
+    "Cookie": "5vvs6151ScRQGpdMlKAf8FAFERO67MmK",
+    "Session": "c35o5m7xkymbjdtcu9k916f8jfj2f8x7"
+}

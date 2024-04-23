@@ -1,0 +1,35 @@
+{
+    "seed_folder": "django_seed_file",
+    "fields": {
+      "method":{
+          "type": "string",
+          "choices": ["POST","GET","PUT","DELETE"]
+      },
+      "url":{
+        "type": "string",
+        "choices": ["/","/add","/delete","/edit","/export", "/?search="] 
+      },
+      "Cookie":{
+        "type": "string"
+
+      },
+      "Session":{
+        "type": "string"
+      },
+      "headers":{
+        "type": "binary",
+        "choices": [0, 1]       
+      },
+        "name": {
+            "type": "string"
+        },
+        "info": {
+            "type": "string"
+        },
+        "price": {
+            "type": "integer"
+        }
+  
+    }
+  }
+  
