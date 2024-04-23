@@ -8,6 +8,7 @@
 #include <iostream>
 #include <queue>
 #include <random>
+#include <chrono>
 
 #include "config.h"
 #include "driver.h"
@@ -134,6 +135,10 @@ int main() {
     fs::create_directories(output_directory / "interesting");
     fs::create_directories(output_directory / "crash");
 
+    // Create time file and clear its contents
+    std::ofstream tfile {output_directory / "time", std::ios::trunc};
+    tfile.close();
+
     // Read the seed file
     for (auto const& seed_file : fs::directory_iterator{seed_folder}) {
         std::ifstream seed{seed_file.path()};
@@ -152,6 +157,10 @@ int main() {
 
     unsigned int interesting_count = 0;
     unsigned int crash_count = 0;
+    auto startTime = std::chrono::system_clock::now();
+    auto startMillisecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::milliseconds>(startTime)
+        .time_since_epoch()
+        .count();
 
     while (true) {
         InputSeed i = seedQueue.front();
@@ -174,19 +183,30 @@ int main() {
 
                 // Output interesting input as a file in the output directory
                 std::ostringstream filename;
+                std::ofstream time_file {output_directory / "time", std::ios::app};
                 fs::path output_path;
+                auto currentTime = std::chrono::system_clock::now();
+                auto millisecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::milliseconds>(currentTime)
+                    .time_since_epoch()
+                    .count();
+                auto timeSinceStart = millisecondsSinceEpoch - startMillisecondsSinceEpoch;
+
                 if (failed) {
                     filename << "input" << crash_count << ".json";
                     output_path = output_directory / "crash" / filename.str();
+                    time_file << "C," << timeSinceStart << std::endl;
                     crash_count++;
                 } else {
                     filename << "input" << interesting_count << ".json";
                     output_path =
                         output_directory / "interesting" / filename.str();
+                    time_file << "I," << timeSinceStart << std::endl;
                     interesting_count++;
                 }
                 std::ofstream output_file{output_path};
                 output_file << std::setw(4) << mutated.to_json() << std::endl;
+                output_file.close();
+                time_file.close();
             }
 
             // Zero out the coverage array
