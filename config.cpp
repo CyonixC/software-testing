@@ -119,6 +119,14 @@ std::vector<Field> readFields(const json& j) {
                 }
             }
         }
+
+        if (field_conf.contains("validSet")) {
+            std::string valid_set = field_conf["validSet"];
+            std::vector<std::byte> vec;
+            for (char c : valid_set)
+                vec.push_back(static_cast<std::byte>(c));
+            f.validSet = vec;
+        }
         fields.push_back(f);
     }
     return fields;

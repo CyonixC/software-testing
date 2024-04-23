@@ -13,6 +13,7 @@ typedef struct {
     FieldTypes type;
     std::string name;
     std::vector<std::vector<std::byte>> validChoices;
+    std::vector<std::byte> validSet;
 } Field;
 
 typedef struct {

@@ -2,13 +2,13 @@
 #include <sys/wait.h>  // For waitpid()
 #include <unistd.h>    // For fork(), execvp()
 #include <array>
-#include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <fstream>  // ifstream
 #include <iostream>
 #include <queue>
 #include <random>
+#include <chrono>
 
 #include "config.h"
 #include "driver.h"
@@ -23,6 +23,7 @@ static int16_t interesting_16[] = {INTERESTING_8, INTERESTING_16};
 static int32_t interesting_32[] = {INTERESTING_8, INTERESTING_16,
                                    INTERESTING_32};
 void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen);
+void fuzz_set(std::vector<std::byte>& fuzz_data, const std::vector<std::byte>& valid_set, int minLen, int maxLen);
 
 // Change endianness of a 16 bit value
 uint16_t SWAP16(uint16_t _x) {
@@ -136,7 +137,7 @@ int main() {
     fs::create_directories(output_directory / "crash");
 
     // Create time file and clear its contents
-    std::ofstream tfile{output_directory / "time", std::ios::trunc};
+    std::ofstream tfile {output_directory / "time", std::ios::trunc};
     tfile.close();
 
     // Read the seed file
@@ -158,10 +159,9 @@ int main() {
     unsigned int interesting_count = 0;
     unsigned int crash_count = 0;
     auto startTime = std::chrono::system_clock::now();
-    auto startMillisecondsSinceEpoch =
-        std::chrono::time_point_cast<std::chrono::milliseconds>(startTime)
-            .time_since_epoch()
-            .count();
+    auto startMillisecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::milliseconds>(startTime)
+        .time_since_epoch()
+        .count();
 
     while (true) {
         InputSeed i = seedQueue.front();
@@ -184,17 +184,13 @@ int main() {
 
                 // Output interesting input as a file in the output directory
                 std::ostringstream filename;
-                std::ofstream time_file{output_directory / "time",
-                                        std::ios::app};
+                std::ofstream time_file {output_directory / "time", std::ios::app};
                 fs::path output_path;
                 auto currentTime = std::chrono::system_clock::now();
-                auto millisecondsSinceEpoch =
-                    std::chrono::time_point_cast<std::chrono::milliseconds>(
-                        currentTime)
-                        .time_since_epoch()
-                        .count();
-                auto timeSinceStart =
-                    millisecondsSinceEpoch - startMillisecondsSinceEpoch;
+                auto millisecondsSinceEpoch = std::chrono::time_point_cast<std::chrono::milliseconds>(currentTime)
+                    .time_since_epoch()
+                    .count();
+                auto timeSinceStart = millisecondsSinceEpoch - startMillisecondsSinceEpoch;
 
                 if (failed) {
                     filename << "input" << crash_count << ".json";
@@ -292,7 +288,7 @@ bool isInteresting(std::array<char, SIZE>& data, bool failed) {
 void assignEnergy(InputSeed& input, int seed_count) {
     // Metadata about number of times we chose a seed
     static int chosen_count_total = 0;
-    const int BASE_ENERGY = 5;
+    const int BASE_ENERGY = 1;
 
     // If it's above average, don't fuzz it again
     if (chosen_count_total / seed_count > input.chosen_count) {
@@ -315,10 +311,12 @@ InputSeed mutateSeed(InputSeed seed) {
         if (!elem.format.validChoices.empty()) {
 
             // if there are a set of valid choices, pick a random one to be the next input
-            elem.data =
-                elem.format
-                    .validChoices[rand32(elem.format.validChoices.size())];
+            elem.data = elem.format.validChoices[rand32(elem.format.validChoices.size())];
 
+        } else if (elem.format.validSet.size() > 0) {
+                // If there is a valid set, use it to mutate the input
+                fuzz_set(elem.data, elem.format.validSet, elem.format.minLen,
+                        elem.format.maxLen);
         } else {
 
             // Otherwise, put it through the mutation process.
@@ -326,6 +324,140 @@ InputSeed mutateSeed(InputSeed seed) {
         }
     }
     return seed;
+}
+
+void fuzz_set(std::vector<std::byte>& fuzz_data, const std::vector<std::byte>& valid_set, int minLen, int maxLen) {
+    int32_t stage_max = 1;  // arbitrary for now
+
+    for (int32_t stage_cur = 0; stage_cur < stage_max; stage_cur++) {
+
+        uint32_t use_stacking = 1 << (1 + rand32(HAVOC_STACK_POW2));
+
+        // stage_cur_val = use_stacking;
+
+        for (uint32_t i = 0; i < use_stacking; i++) {
+            uint32_t c = rand32(5);
+            switch (c) {
+                case 0: {
+
+                    /* Just set a random byte to a random value. Because,
+                      why not. We use XOR with 1-255 to eliminate the
+                      possibility of a no-op. */
+
+                    uint32_t pos = rand32(fuzz_data.size());
+                    fuzz_data[pos] = valid_set[rand32(valid_set.size())];
+                    break;
+                }
+                case 1 ... 2: {
+
+                    /* Delete bytes. We're making this a bit more likely
+                    than insertion (the next option) in hopes of keeping
+                    files reasonably small. */
+
+                    uint32_t del_from, del_len;
+
+                    if (fuzz_data.size() <= minLen)
+                        break;
+
+                    /* Don't delete too much. */
+
+                    del_len = choose_block_len(fuzz_data.size() - minLen);
+
+                    del_from = rand32(fuzz_data.size() - del_len + 1);
+
+                    memmove(fuzz_data.data() + del_from,
+                            fuzz_data.data() + del_from + del_len,
+                            fuzz_data.size() - del_from - del_len);
+
+                    break;
+                }
+                case 3: {
+
+                    if (fuzz_data.size() + HAVOC_BLK_XL < MAX_FILE) {
+
+                        /* Clone bytes (75%) or insert a block of constant bytes (25%). */
+
+                        uint8_t actually_clone = rand32(4);
+                        uint32_t clone_from, clone_to, clone_len;
+                        std::vector<std::byte> new_buf = fuzz_data;
+                        uint32_t max_blk_len =
+                            fuzz_data.size() < maxLen ? fuzz_data.size() : maxLen;
+
+
+                        if (actually_clone) {
+                            clone_len = choose_block_len(max_blk_len);
+                            clone_from = rand32(fuzz_data.size() - clone_len + 1);
+
+                        } else {
+
+                            clone_len = choose_block_len(max_blk_len);
+                            clone_from = 0;
+                        }
+
+                        uint32_t clone_to_lim = fuzz_data.size() < maxLen - clone_len
+                                                     ? fuzz_data.size()
+                                                     : maxLen - clone_len;
+                        clone_to = rand32(clone_to_lim);
+
+                        if(clone_to + clone_len > new_buf.size()){
+                            new_buf.resize(clone_to + clone_len);
+                        }
+
+                        /* Inserted part */
+                        if (actually_clone)
+                            memcpy(new_buf.data() + clone_to,
+                                   fuzz_data.data() + clone_from, clone_len);
+                        else
+                            memset(new_buf.data() + clone_to,
+                                   rand32(2) ? static_cast<char>(valid_set[rand32(valid_set.size())])
+                                             : static_cast<char>(
+                                                   fuzz_data[rand32(fuzz_data.size())]),
+                                   clone_len);
+
+
+
+                        if (new_buf.size() > maxLen) {
+                            int a = 1;
+                        }
+                        fuzz_data = std::move(new_buf);
+                    }
+
+                    break;
+                }
+
+                case 4: {
+
+                    /* Overwrite bytes with a randomly selected chunk (75%) or fixed
+                      bytes (25%). */
+
+                    uint32_t copy_from, copy_to, copy_len;
+
+                    if (fuzz_data.size() < 2)
+                        break;
+
+                    copy_len = choose_block_len(fuzz_data.size() - 1);
+
+                    copy_from = rand32(fuzz_data.size() - copy_len + 1);
+                    copy_to = rand32(fuzz_data.size() - copy_len + 1);
+
+                    if (rand32(4)) {
+
+                        if (copy_from != copy_to)
+                            memmove(fuzz_data.data() + copy_to,
+                                    fuzz_data.data() + copy_from, copy_len);
+
+                    } else
+                        memset(fuzz_data.data() + copy_to,
+                               rand32(2)
+                                   ? static_cast<char>(valid_set[rand32(valid_set.size())])
+                                   : static_cast<char>(fuzz_data[rand32(fuzz_data.size())]),
+                               copy_len);
+
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
@@ -366,14 +498,12 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
 
                     if (rand32(2)) {
 
-                        *(uint16_t*)(fuzz_data.data() +
-                                     rand32(fuzz_data.size() - 1)) =
+                        *(uint16_t*)(fuzz_data.data() + rand32(fuzz_data.size() - 1)) =
                             interesting_16[rand32(sizeof(interesting_16) >> 1)];
 
                     } else {
 
-                        *(uint16_t*)(fuzz_data.data() +
-                                     rand32(fuzz_data.size() - 1)) =
+                        *(uint16_t*)(fuzz_data.data() + rand32(fuzz_data.size() - 1)) =
                             SWAP16(interesting_16[rand32(
                                 sizeof(interesting_16) >> 1)]);
                     }
@@ -389,14 +519,12 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
 
                     if (rand32(2)) {
 
-                        *(uint32_t*)(fuzz_data.data() +
-                                     rand32(fuzz_data.size() - 3)) =
+                        *(uint32_t*)(fuzz_data.data() + rand32(fuzz_data.size() - 3)) =
                             interesting_32[rand32(sizeof(interesting_32) >> 2)];
 
                     } else {
 
-                        *(uint32_t*)(fuzz_data.data() +
-                                     rand32(fuzz_data.size() - 3)) =
+                        *(uint32_t*)(fuzz_data.data() + rand32(fuzz_data.size() - 3)) =
                             SWAP32(interesting_32[rand32(
                                 sizeof(interesting_32) >> 2)]);
                     }
@@ -563,6 +691,7 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
                             fuzz_data.data() + del_from + del_len,
                             fuzz_data.size() - del_from - del_len);
 
+
                     break;
                 }
 
@@ -575,27 +704,26 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
                         uint8_t actually_clone = rand32(4);
                         uint32_t clone_from, clone_to, clone_len;
                         std::vector<std::byte> new_buf = fuzz_data;
-                        uint32_t max_blk_len = fuzz_data.size() < maxLen
-                                                   ? fuzz_data.size()
-                                                   : maxLen;
+                        uint32_t max_blk_len =
+                            fuzz_data.size() < maxLen ? fuzz_data.size() : maxLen;
+
 
                         if (actually_clone) {
                             clone_len = choose_block_len(max_blk_len);
-                            clone_from =
-                                rand32(fuzz_data.size() - clone_len + 1);
+                            clone_from = rand32(fuzz_data.size() - clone_len + 1);
 
                         } else {
+
                             clone_len = choose_block_len(max_blk_len);
                             clone_from = 0;
                         }
 
-                        uint32_t clone_to_lim =
-                            fuzz_data.size() < maxLen - clone_len
-                                ? fuzz_data.size()
-                                : maxLen - clone_len;
+                        uint32_t clone_to_lim = fuzz_data.size() < maxLen - clone_len
+                                                     ? fuzz_data.size()
+                                                     : maxLen - clone_len;
                         clone_to = rand32(clone_to_lim);
 
-                        if (clone_to + clone_len > new_buf.size()) {
+                        if(clone_to + clone_len > new_buf.size()){
                             new_buf.resize(clone_to + clone_len);
                         }
 
@@ -604,14 +732,17 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
                             memcpy(new_buf.data() + clone_to,
                                    fuzz_data.data() + clone_from, clone_len);
                         else
-                            memset(
-                                new_buf.data() + clone_to,
-                                rand32(2)
-                                    ? rand32(256)
-                                    : static_cast<char>(
-                                          fuzz_data[rand32(fuzz_data.size())]),
-                                clone_len);
+                            memset(new_buf.data() + clone_to,
+                                   rand32(2) ? rand32(256)
+                                             : static_cast<char>(
+                                                   fuzz_data[rand32(fuzz_data.size())]),
+                                   clone_len);
 
+
+
+                        if (new_buf.size() > maxLen) {
+                            int a = 1;
+                        }
                         fuzz_data = std::move(new_buf);
                     }
 
@@ -643,8 +774,7 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
                         memset(fuzz_data.data() + copy_to,
                                rand32(2)
                                    ? rand32(256)
-                                   : static_cast<char>(
-                                         fuzz_data[rand32(fuzz_data.size())]),
+                                   : static_cast<char>(fuzz_data[rand32(fuzz_data.size())]),
                                copy_len);
 
                     break;
@@ -801,6 +931,7 @@ void fuzz(std::vector<std::byte>& fuzz_data, int minLen, int maxLen) {
             if (fuzz_data.size() > maxLen) {
                 int a = 1;
             }
+
         }
     }
 }
