@@ -14,3 +14,6 @@ Before fix
 coap_1: FUZZING with BASE = 5, exponential energy
 coap_2: FUZZING with BASE = 5, exponential energy
 After fix
+coap_3: FUZZING with BASE = 1, exponential energy
+coap_4: FUZZING with BASE = 100, exponential energy
+coap_5: FUZZING with constant enerrgy 500
