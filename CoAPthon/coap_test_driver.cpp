@@ -46,7 +46,8 @@ int hash_cov_into_shm(std::array<char, SIZE>& shm, const char* filename) {
         }
         shm[crc]++;
     } while (res == SQLITE_ROW);
-    sqlite3_close(db);
+    sqlite3_finalize(stmt);
+    int res1 = sqlite3_close(db);
     return 0;
 }
 
@@ -116,7 +117,7 @@ std::vector<uint8_t> createCoapMessage(const std::vector<Input>& inputs) {
     tkl = static_cast<uint8_t>(
         token
             .size());  // Ensure this happens after the last modification to `token`
-    std::cout << "Current Token Length: " << token.size() << std::endl;
+    // std::cout << "Current Token Length: " << token.size() << std::endl;
 
     // Construct the message header
     uint8_t header = (ver << 6) | (type << 4) | tkl;
@@ -196,12 +197,12 @@ int sendUdpMessage(const std::string& host, uint16_t port,
         close(sockfd);
         throw std::runtime_error(errorMessage);
     }
-    std::cout << "Message sent successfully to " << host << ":" << port
-              << std::endl;
+    // std::cout << "Message sent successfully to " << host << ":" << port
+    //           << std::endl;
 
     // Setting up for receiving with timeout
     struct timeval tv;
-    tv.tv_sec = 10;  // 10 Seconds timeout
+    tv.tv_sec = 1;  // 10 Seconds timeout
     tv.tv_usec = 0;
 
     fd_set readfds;
@@ -221,14 +222,18 @@ int sendUdpMessage(const std::string& host, uint16_t port,
         if (len == -1) {
             std::cerr << "Receive error: " << strerror(errno) << std::endl;
         } else {
-            std::cout << "Received response: " << std::string(buffer, len)
-                      << std::endl;
+            // std::cout << "Received response: " << std::string(buffer, len)
+            //           << std::endl;
         }
     } else {
+        close(sockfd);
         return 1;
     }
 
-    close(sockfd);
+    if (close(sockfd) == -1) {
+        std::cerr << "Could not close socket: " << strerror(errno) << std::endl;
+        return 0;
+    }
     return 0;
 }
 int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
@@ -236,7 +241,7 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     std::string coapServerHost = "127.0.0.1";
     uint16_t coapServerPort = 5683;
 
-    std::cout << inputVectorToJSON(inputs);
+    // std::cout << inputVectorToJSON(inputs);
 
     // // Define the example inputs for the various parts of the CoAP message.
     // std::vector<Input> inputs = {
@@ -252,13 +257,13 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     // Create the CoAP message.
     std::vector<uint8_t> coapMessage = createCoapMessage(inputs);
     // Print each byte in hex format
-    for (uint8_t byte : coapMessage) {
-        // Print byte in hex with leading zeros, formatted as width of 2
-        std::cout << std::hex << std::setw(2) << std::setfill('0')
-                  << static_cast<int>(byte) << ' ';
-    }
+    // for (uint8_t byte : coapMessage) {
+    //     // Print byte in hex with leading zeros, formatted as width of 2
+    //     std::cout << std::hex << std::setw(2) << std::setfill('0')
+    //               << static_cast<int>(byte) << ' ';
+    // }
 
-    std::cout << std::dec << std::setw(0) << std::setfill(' ');
+    // std::cout << std::dec << std::setw(0) << std::setfill(' ');
     // Send the CoAP message over UDP and handle the response.
     int result =
         sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
@@ -284,6 +289,10 @@ pid_t run_server() {
 
         // Redirect stdout to /dev/null
         if (dup2(open("/dev/null", O_WRONLY), STDOUT_FILENO) == -1) {
+            perror("dup2");
+            return 1;
+        }
+        if (dup2(open("/dev/null", O_WRONLY), STDERR_FILENO) == -1) {
             perror("dup2");
             return 1;
         }
@@ -315,12 +324,13 @@ pid_t run_server() {
 
         // int status = std::system(
         //     "sudo gdb -ex run -ex backtrace --args "
-        //     "/home/professor_a/.pyenv/versions/2.7.18/bin/python "
+        //     "/home/javin/.pyenv/versions/coap/bin/python"
         //     "CoAPthon/coapserver.py -i 127.0.0.1 -p 5683 > /dev/null 2>&1");
 
         // if (status != 0) {
-        //     // std::cerr << "Error executing server: " << std::endl;
-        //     exit(1);
+        //     std::cerr << "Error executing server: " << std::endl;
+        //     _exit(EXIT_FAILURE);  // Use _exit in child after fork
+        //     // exit(1);
         // }
         // exit(0);  // Exit the child process
     }
