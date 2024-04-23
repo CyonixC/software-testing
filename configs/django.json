@@ -1,32 +1,44 @@
 {
-  "seed_folder": "./configs/django_seeds",
+  "seed_folder": "configs/django_seeds",
   "fields": {
-    "method": {
+    "method":{
+        "type": "string",
+        "choices": ["POST","GET","PUT","DELETE"]
+    },
+    "url":{
       "type": "string",
-      "choices": ["POST", "GET", "PUT", "DELETE"]
+      "choices": ["/datab/product","/datab/product/add","/datab/product/delete","/datab/product/edit","/datab/product/export"],
+      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     },
-    "url": {
+    "index":{
+      "type": "integer",
+      "validSet": "0123456789"
+    },
+    "Cookie":{
       "type": "string",
-      "choices": ["/", "/add", "/delete", "/edit", "/export", "/?search="]
+      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
     },
-    "Cookie": {
-      "type": "string"
+    "Session":{
+      "type": "string",
+      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     },
-    "Session": {
-      "type": "string"
-    },
-    "headers": {
+    "headers":{
       "type": "binary",
-      "choices": [0, 1]
+      "choices": [[0], [1]]       
     },
     "name": {
-      "type": "string"
+        "type": "string",
+        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     },
     "info": {
-      "type": "string"
+        "type": "string",
+        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     },
     "price": {
-      "type": "integer"
+        "type": "binary",
+        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     }
+
   }
 }
