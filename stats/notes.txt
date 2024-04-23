@@ -1,4 +1,7 @@
-ble_1.png: Fuzzing with BASE = 1, without mutation op 15.
-ble_2.png: Fuzzing with BASE = 5, without mutation op 15.
-ble_3.png: Fuzzing with BASE = 5, without mutation op 15.
-ble_4.png: Fuzzing with BASE = 5, without mutation op 15.
+ble_1: Fuzzing with BASE = 1, exponential energy
+ble_2: Fuzzing with BASE = 5, exponential energy
+ble_3: Fuzzing with BASE = 5, exponential energy
+ble_4: Fuzzing with BASE = 5, exponential energy
+
+coap_1: FUZZING with BASE = 5, exponential energy
+coap_2: FUZZING with BASE = 5, exponential energy
