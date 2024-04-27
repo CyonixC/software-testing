@@ -149,7 +149,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 
     // Set the receive timeout option on the socket
     struct timeval timeout;
-    timeout.tv_sec = 1;  // 10 Seconds timeout
+    timeout.tv_sec = 10;  // 10 Seconds timeout
     timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
         std::cerr << "Set timeout failed: " << strerror(errno) << std::endl;
