@@ -15,8 +15,13 @@
 #include "inputs.h"
 #include "sample_program.h"
 
+#define STRINGIFY(x) #x
+#define GETENV(x) STRINGIFY(x)
+
 namespace fs = std::filesystem;
-const fs::path output_directory{"fuzz_out"};
+const std::string program_name = GETENV(PROGRAM_NAME);
+const std::string output_dir = program_name + "_out";
+const fs::path output_directory{output_dir};
 
 static int8_t interesting_8[] = {INTERESTING_8};
 static int16_t interesting_16[] = {INTERESTING_8, INTERESTING_16};

@@ -9,20 +9,20 @@ ifdef DEBUG
 	DEBUG_FLAG = -g -DDEBUG
 endif
 
-sample: fuzz_main.cpp inputs.cpp crc16.c sample_program.cpp config.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c sample_program.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/input_config_example.json"
-
 coap: fuzz_main.cpp inputs.cpp crc16.c config.cpp CoAPthon/coap_test_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/coap.json"
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/coap.json" -DPROGRAM_NAME="coap"
 
 ble: fuzz_main.cpp inputs.cpp crc16.c config.cpp BLEzephyr/ble_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c BLEzephyr/ble_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/ble.json"
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c BLEzephyr/ble_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/ble.json" -DPROGRAM_NAME="ble"
 
 django: fuzz_main.cpp inputs.cpp crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp $(OUTPUT_FOLDER)
-	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c DjangoWebApplication/django_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/django.json"
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c DjangoWebApplication/django_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/django.json" -DPROGRAM_NAME="django"
 
-django_test: inputs.cpp crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp
-	g++ inputs.cpp sqlite3.o crc16.c config.cpp DjangoWebApplication/django_test_driver.cpp -o DjangoWebApplication/test.out $(DEBUG_FLAG) $(SANITIZER_FLAG)
+coap_test_inputs: send_inputs.cpp inputs.cpp config.cpp CoAPthon/coap_test_driver.cpp $(OUTPUT_FOLDER)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/coap_test_inputs.json"
+
+sample: fuzz_main.cpp inputs.cpp crc16.c sample_program.cpp config.cpp $(OUTPUT_FOLDER)
+	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c sample_program.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/input_config_example.json"
 
 $(OUTPUT_FOLDER):
 	mkdir $(OUTPUT_FOLDER)
