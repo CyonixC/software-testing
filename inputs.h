@@ -34,3 +34,4 @@ typedef struct {
 } Input;
 
 json inputVectorToJSON(const std::vector<Input>& input);
+std::vector<Input> makeInputsFromSeed(const InputSeed& seed);
