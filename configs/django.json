@@ -3,12 +3,11 @@
   "fields": {
     "method":{
         "type": "string",
-        "choices": ["POST","GET","PUT","DELETE"]
+        "choices": ["POST"]
     },
     "url":{
       "type": "string",
-      "choices": ["/datab/product","/datab/product/add","/datab/product/delete","/datab/product/edit","/datab/product/export"],
-      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "choices": ["/datatb/product/add/"]
     },
     "index":{
       "type": "integer",
@@ -16,12 +15,15 @@
     },
     "Cookie":{
       "type": "string",
-      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "choices": ["choi5vvs6151ScRQGpdMlKAf8FAFERO67MmK"]       
+
 
     },
     "Session":{
       "type": "string",
-      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "choices": ["c35o5m7xkymbjdtcu9k916f8jfj2f8x7;"]
     },
     "headers":{
       "type": "binary",
@@ -29,15 +31,22 @@
     },
     "name": {
         "type": "string",
-        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "choices": ["asdsa"]       
+
     },
     "info": {
         "type": "string",
-        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "choices": ["beep"]       
+
     },
     "price": {
         "type": "binary",
-        "validSet": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "validSet": "0123456789",
+        "max_length": 10,
+        "min_length": 1
+
     }
 
   }

@@ -75,7 +75,11 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
     std::string cookie{};
     std::string sessionID{};
     std::string index{};
-
+    nlohmann::json jsonBody;
+    std::string value{};
+    std::string jsonBuilder =  R"({)";
+    bool first = true;
+    body << "{";
     for (const auto& input : inputs) {
         if (input.name == "method") {
             method.reserve(input.data.size()); // Reserve space to avoid reallocation
@@ -104,44 +108,44 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
             for (std::byte b : input.data) {
                 cookie.push_back(static_cast<char>(b));
             }
-        } else if (input.name == "SessionID") {
+        } else if (input.name == "Session") {
             sessionID.reserve(input.data.size()); // Reserve space to avoid reallocation
 
             for (std::byte b : input.data) {
                 sessionID.push_back(static_cast<char>(b));
             }
-        } else {
-            // Handle body parameters
-            if (!body.str().empty()) body << "&";
-            std::string temp;
-            temp.reserve(input.data.size()); // Reserve space to avoid reallocation
-
+        }else if (input.name == "headers") {} 
+        else {
+            value = "";
             for (std::byte b : input.data) {
-                temp.push_back(static_cast<char>(b));
+                value.push_back(static_cast<char>(b));
             }
+            jsonBody[input.name] = value;
+            if (!first) {
+                jsonBuilder += ", ";
+            }
+            first = false;
+            jsonBuilder += "\"" + input.name + "\": \"" + value + "\"";
             
-            body << input.name << "=" << urlEncode(temp);
         }
     }
-    
+    jsonBuilder += "}"; // Close the JSON structure
     if(url!="/datab/product" ||url !="/datab/product/add"){
-        url += "/"+index+"/";
     }
     headers["Cookie"] = "csrftoken=" + cookie + "; sessionid="  + sessionID;
-
     std::string bodyStr = body.str();
-
+    std::string test =R"({"info":"beep","name":"asdasd","price":"13"})";
     std::ostringstream request;
     request << method << " " << url << " HTTP/1.1\r\n";
     for (const auto& header : headers) {
         request << header.first << ": " << header.second << "\r\n";
     }
     if (!bodyStr.empty()) {
-        request << "Content-Type: application/x-www-form-urlencoded\r\n";
-        request << "Content-Length: " << bodyStr.length() << "\r\n";
+        request << "Content-Type: application/json\r\n";
+        request << "Content-Length: " << jsonBuilder.size() << "\r\n";
     }
     request << "\r\n";
-    request << bodyStr;
+    request << jsonBody;
 
     return request.str();
 }
@@ -158,7 +162,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 
     // Set the receive timeout option on the socket
     struct timeval timeout;
-    timeout.tv_sec = 10;  // 10 Seconds timeout
+    timeout.tv_sec = 1;  // 10 Seconds timeout
     timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
         std::cerr << "Set timeout failed: " << strerror(errno) << std::endl;
@@ -195,7 +199,9 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     std::string response;
     const int bufferSize = 4096;
     char buffer[bufferSize];
-    ssize_t bytesRead = recv(sockfd, buffer, bufferSize, 0);
+    ssize_t bytesRead = recv(sockfd, buffer, bufferSize - 1, 0); // Leave space for null terminator
+    std::cout<<bytesRead;
+
     if (bytesRead < 0) {
         // If no response is received before the timeout, recv will fail with EWOULDBLOCK/EAGAIN
         if (errno == EWOULDBLOCK || errno == EAGAIN) {
@@ -238,7 +244,6 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     for (char c : strMsg) {
         httpMessage.push_back(static_cast<uint8_t>(c));
     }
-
     int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
     hash_cov_into_shm(shm, "data/.coverage");
 
