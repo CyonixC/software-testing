@@ -110,17 +110,6 @@ static uint32_t choose_block_len(uint32_t limit) {
     return min_value + rand32(max_value - min_value + 1);
 }
 
-std::vector<Input> makeInputsFromSeed(const InputSeed& seed) {
-    std::vector<Input> out{};
-    for (InputField inpf : seed.inputs) {
-        Input in;
-        in.data = inpf.data;
-        in.name = inpf.format.name;
-        out.push_back(in);
-    }
-    return out;
-}
-
 int main() {
     // Initialise the coverage measurement buffer
     std::array<char, SIZE> coverage_arr{};

@@ -171,6 +171,35 @@ InputSeed readSeed(const json& j, std::vector<Field>& fields) {
     return ret;
 }
 
+std::vector<Input> makeInputsFromSeed(const InputSeed& seed) {
+    std::vector<Input> out{};
+    for (InputField inpf : seed.inputs) {
+        Input in;
+        in.data = inpf.data;
+        in.name = inpf.format.name;
+        out.push_back(in);
+    }
+    return out;
+}
+
+std::vector<Input> inputsFromBugFile(const std::string& bug_file) {
+    std::vector<Input> inputs;
+    std::ifstream file(bug_file);
+    json j = json::parse(file);
+    for (auto& it : j.items()) {
+        try {
+            Input i;
+            i.name = it.key();
+            const std::vector<uint8_t> val = it.value();
+            i.data = int_to_binary(val);
+            inputs.push_back(i);
+        } catch (json::type_error& e) {
+            continue;
+        }
+    }
+    return inputs;
+}
+
 // int main() {
 //     // const std::vector<unsigned char> test{13, 44, 25, 56, 165, 125, 43, 29, 38};
 //     // const std::vector<std::byte> bytes = int_to_binary(test);
