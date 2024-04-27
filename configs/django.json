@@ -3,7 +3,7 @@
   "fields": {
     "method":{
         "type": "string",
-        "choices": ["POST","GET"]
+        "choices": ["POST","GET", "PUT", "DELETE "]
     },
     "url":{
       "type": "string",
@@ -42,10 +42,7 @@
     },
     "price": {
         "type": "binary",
-        "validSet": "0123456789",
-        "max_length": 10,
-        "min_length": 1
-
+        "validSet": "0123456789"
     }
 
   }
