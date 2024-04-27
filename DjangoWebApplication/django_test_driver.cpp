@@ -214,29 +214,24 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
         return -1;
     }
 
-    // If some data was received, print it
     if (bytesRead > 0) {
         response.assign(buffer, bytesRead);
         std::cout << "Received response:\n" << response << std::endl;
     }
 
-    // If no data received, it means the connection was closed by the server
     if (bytesRead == 0) {
         std::cerr << "Connection closed by server" << std::endl;
         close(sockfd);
         return -1;
     }
 
-    // Close the socket
     close(sockfd);
-    return 0; // Success
+    return 0; 
 }
 int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
-    // Define the CoAP server details.
     std::string coapServerHost = "127.0.0.1";
     uint16_t coapServerPort = 8000;
 
-    // Create the CoAP message.
     std::string strMsg = createHttpRequest(inputs);
     std::cout << strMsg << std::endl;
     
@@ -249,7 +244,6 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
 
     hash_cov_into_shm(shm, "data/.coverage");
 
-    // Handle the result as needed
     if (result == 1) {
         std::cout << "Timeout occurred or no response received." << std::endl;
         return 1;
