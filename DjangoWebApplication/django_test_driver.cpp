@@ -129,23 +129,23 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
             
         }
     }
-    jsonBuilder += "}"; // Close the JSON structure
-    if(url!="/datab/product" ||url !="/datab/product/add"){
+    jsonBuilder += R"(})"; 
+    if(url=="/datatb/product/delete/" ||url =="/datatb/product/edit/"){
+        url += index +"/"; 
     }
     headers["Cookie"] = "csrftoken=" + cookie + "; sessionid="  + sessionID;
     std::string bodyStr = body.str();
-    std::string test =R"({"info":"beep","name":"asdasd","price":"13"})";
+    //std::string test =R"({"info":"beep","name":"asdasd","price":"13"})";
     std::ostringstream request;
     request << method << " " << url << " HTTP/1.1\r\n";
     for (const auto& header : headers) {
         request << header.first << ": " << header.second << "\r\n";
     }
-    if (!bodyStr.empty()) {
         request << "Content-Type: application/json\r\n";
-        request << "Content-Length: " << jsonBuilder.size() << "\r\n";
-    }
-    request << "\r\n";
-    request << jsonBody;
+        request << "Content-Length: " << jsonBuilder.size() << "\r\n\r\n";
+        request << jsonBuilder;
+
+   
 
     return request.str();
 }
@@ -189,6 +189,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     }
 
     // Send the HTTP request
+    sleep(1);
     if (send(sockfd, message.data(), message.size(), 0) < 0) {
         std::cerr << "Send failed: " << strerror(errno) << std::endl;
         close(sockfd);
@@ -245,6 +246,7 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
         httpMessage.push_back(static_cast<uint8_t>(c));
     }
     int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
+
     hash_cov_into_shm(shm, "data/.coverage");
 
     // Handle the result as needed
