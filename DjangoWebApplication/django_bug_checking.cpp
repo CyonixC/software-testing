@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include <cstdlib>
 #include "../checksum.h"
 #include "../bug_checking.h"
 const int bufferSize = 4096;
@@ -208,6 +209,11 @@ void signalHandler(int signal) {
     exit(1);
 }
 
+void exitHandler() {
+    std::cout << "Terminating pid: " << pid << "\n";
+    killpg(getpgid(pid), SIGINT);
+}
+
 pid_t run_server() {
     std::string managePyPath= "DjangoWebApplication/manage.py";
     std::string ipAddress = "127.0.0.1";
@@ -253,6 +259,7 @@ pid_t run_server() {
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);
     signal(SIGQUIT, signalHandler);
+    atexit(exitHandler);
 
 
     // Parent process
