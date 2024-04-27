@@ -15,8 +15,12 @@
 #include <stdexcept>  // Include for std::runtime_error
 #include <string>
 #include <vector>
+#include <signal.h>
 #include "../checksum.h"
 #include "../driver.h"
+
+const int bufferSize = 4096;
+char buffer[bufferSize];
 
 int hash_cov_into_shm(std::array<char, SIZE>& shm, const char* filename) {
     sqlite3* db;
@@ -198,10 +202,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 
     // Receive response from the server
     std::string response;
-    const int bufferSize = 4096;
-    char buffer[bufferSize];
-    ssize_t bytesRead = recv(sockfd, buffer, bufferSize - 1, 0); // Leave space for null terminator
-    std::cout<<bytesRead;
+    ssize_t bytesRead = recv(sockfd, buffer, bufferSize - 1, 0); // Leave space for null terminator    std::cout<<bytesRead;
 
     if (bytesRead < 0) {
         // If no response is received before the timeout, recv will fail with EWOULDBLOCK/EAGAIN
@@ -251,11 +252,20 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
 
     return 0;
 }
+
+pid_t pid;
+
+void signalHandler(int signal) {
+    std::cout << "Terminating pid: " << pid << "\n";
+    killpg(getpgid(pid), SIGINT);
+    exit(1);
+}
+
 pid_t run_server() {
     std::string managePyPath= "DjangoWebApplication/manage.py";
     std::string ipAddress = "127.0.0.1";
     std::string port = "8000";
-    pid_t pid = fork();
+    pid = fork();
     // pid_t pid = 0;
 
     if (pid == -1) {
@@ -271,6 +281,12 @@ pid_t run_server() {
         // }
         // close(devNull); // Close the file descriptor as it is no longer needed
 
+        // Child process
+        if (setpgid(0, 0) < 0) { // Creates a new session and sets the process group ID
+            perror("setpgid");
+            _exit(EXIT_FAILURE);
+        }
+
         // Run Django server
         char* args[] = {
             (char*)"python3",
@@ -284,6 +300,13 @@ pid_t run_server() {
         std::cerr << "Failed to execute Django server" << std::endl;
         _exit(EXIT_FAILURE); // Use _exit in child after fork
     }
+
+    // Kill child process if main is interrupted
+    signal(SIGINT, signalHandler);
+    signal(SIGKILL, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGQUIT, signalHandler);
+
 
     // Parent process
     return pid; // Return the child process ID
