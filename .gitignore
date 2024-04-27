@@ -3,9 +3,12 @@ bin/
 data/
 fuzz_out/
 coap_out/
+django_out/
+ble_out/
 *.out
 *.gcda
 __pycache__/
 *.info
+db.sqlite3
 
 !BLEzephyr/bumble/*
