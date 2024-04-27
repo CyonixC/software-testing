@@ -161,7 +161,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
         std::string errorMessage = "Could not create TCP socket: ";
         errorMessage += strerror(errno);
         std::cerr << errorMessage << std::endl;
-        return -1;
+        return 1;
     }
 
     // Set the receive timeout option on the socket
@@ -171,7 +171,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
         std::cerr << "Set timeout failed: " << strerror(errno) << std::endl;
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     // Set up the server address structure
@@ -182,14 +182,14 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     if (inet_pton(AF_INET, host.c_str(), &server_addr.sin_addr) <= 0) {
         std::cerr << "Invalid address/Address not supported: " << strerror(errno) << std::endl;
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     // Connect to the server
     if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         std::cerr << "Connection failed: " << strerror(errno) << std::endl;
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     // Send the HTTP request
@@ -197,7 +197,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     if (send(sockfd, message.data(), message.size(), 0) < 0) {
         std::cerr << "Send failed: " << strerror(errno) << std::endl;
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     // Receive response from the server
@@ -212,7 +212,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
             std::cerr << "Receive failed: " << strerror(errno) << std::endl;
         }
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     if (bytesRead > 0) {
@@ -223,7 +223,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     if (bytesRead == 0) {
         std::cerr << "Connection closed by server" << std::endl;
         close(sockfd);
-        return -1;
+        return 1;
     }
 
     close(sockfd);
