@@ -182,19 +182,40 @@ std::vector<Input> makeInputsFromSeed(const InputSeed& seed) {
     return out;
 }
 
-std::vector<Input> inputsFromBugFile(const std::string& bug_file) {
+std::vector<Input> inputsFromBugFile(const std::string& bug_filename,
+                                     const std::string& config_filename) {
     std::vector<Input> inputs;
-    std::ifstream file(bug_file);
-    json j = json::parse(file);
-    for (auto& it : j.items()) {
-        try {
-            Input i;
-            i.name = it.key();
-            const std::vector<uint8_t> val = it.value();
-            i.data = int_to_binary(val);
-            inputs.push_back(i);
-        } catch (json::type_error& e) {
-            continue;
+    std::ifstream config_file(config_filename);
+    auto json_config = json::parse(config_file);
+    auto fields = readFields(json_config);
+
+    std::ifstream bug_file(bug_filename);
+    json j = json::parse(bug_file);
+    for (auto field : fields) {
+        if (!j.contains(field.name))
+            throw std::runtime_error(
+                "Seed does not contain required field value");
+        Input i;
+        i.name = field.name;
+        switch (field.type) {
+            case FieldTypes::INTEGER: {
+                int val = j[field.name].get<int>();
+                i.data = std::vector<std::byte>(
+                    reinterpret_cast<std::byte*>(&val),
+                    reinterpret_cast<std::byte*>(&val) + sizeof(int));
+                inputs.push_back(i);
+                break;
+            }
+            case FieldTypes::BINARY: {
+                const std::vector<uint8_t> val = j[field.name];
+                i.data = int_to_binary(val);
+                inputs.push_back(i);
+                break;
+            }
+            default: {
+                // Skip the rest because we are currently unconcerned of them
+                continue;
+            }
         }
     }
     return inputs;
