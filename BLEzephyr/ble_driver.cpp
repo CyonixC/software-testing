@@ -52,11 +52,16 @@ std::string read_data(const int rfd) {
 void try_create_fifo(const std::string& cpp_fifo_name,
                      const std::string& python_fifo_name) {
     std::filesystem::create_directories("pipe");
-    if (mkfifo(cpp_fifo_name.data(), S_IRWXU) == -1) {
-        perror("Error creating cpp.fifo");
+
+    if (access(cpp_fifo_name.data(), F_OK == -1)) {
+        if (mkfifo(cpp_fifo_name.data(), S_IRWXU) == -1) {
+            perror("Error creating cpp.fifo");
+        }
     }
-    if (mkfifo(python_fifo_name.data(), 0666) == -1) {
-        perror("Error creating python.fifo");
+    if (access(python_fifo_name.data(), F_OK == -1)) {
+        if (mkfifo(python_fifo_name.data(), 0666) == -1) {
+            perror("Error creating python.fifo");
+        }
     }
 }
 
@@ -146,7 +151,6 @@ bool shutdown_zephyr_server(const int pid) {
     }
 
     // Zephyr is still running. Kill it.
-    // std::cout << "Main driver: killing the zephyr server..." << std::endl;
     status = std::system("pkill -15 -f './zephyr.exe'");
     return false;
 }
@@ -230,7 +234,7 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
 
     std::string cpp_fifo_name = "./pipe/cpp.fifo";
     std::string python_fifo_name = "./pipe/python.fifo";
-    // try_create_fifo(cpp_fifo_name, python_fifo_name);
+    try_create_fifo(cpp_fifo_name, python_fifo_name);
 
     auto pid_1 = fork();  // First fork: BLE python
     if (pid_1 == 0) {
@@ -240,7 +244,7 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
         exit(1);
     }
 
-    // Connect with python pipe. Zephyr will be ready when python connected with the pipe
+    // Connect with python pipe. HCI driver will be ready when python connected with the pipe
     auto wfd = open(python_fifo_name.data(), O_WRONLY);
     auto rfd = open(cpp_fifo_name.data(), O_RDONLY);
 

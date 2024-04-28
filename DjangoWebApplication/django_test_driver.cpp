@@ -7,6 +7,7 @@
 #include <array>
 #include <cerrno>   // For errno
 #include <chrono>   // For system_clock
+#include <thread>   // for sleeping for milliseconds
 #include <cstddef>  // For std::byte
 #include <cstdint>  // For uint8_t
 #include <cstring>  // For memset
@@ -63,6 +64,7 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
     std::string sessionID{};
     std::string index{};
     nlohmann::json jsonBody;
+    std::string price{};
     std::string value{};
     std::string jsonBuilder =  R"({)";
     bool first = true;
@@ -102,6 +104,13 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
                 sessionID.push_back(static_cast<char>(b));
             }
         }else if (input.name == "headers") {} 
+        else if (input.name == "price") {
+            int64_t priceNum = 0;
+            for (std::byte b : input.data) {
+                priceNum = (priceNum << 8) + static_cast<int64_t>(b);
+            }
+            price = std::to_string(priceNum);
+        }
         else {
             value = "";
             for (std::byte b : input.data) {
@@ -116,6 +125,12 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
             
         }
     }
+    jsonBody["price"] = price;
+    if (!first) {
+        jsonBuilder += ", ";
+    }
+    first = false;
+    jsonBuilder += "\"price\": \"" + price + "\"";
     jsonBuilder += R"(})"; 
     if(url=="/datatb/product/delete/" ||url =="/datatb/product/edit/"){
         url += index +"/"; 
@@ -176,7 +191,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     }
 
     // Send the HTTP request
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     if (send(sockfd, message.data(), message.size(), 0) < 0) {
         std::cerr << "Send failed: " << strerror(errno) << std::endl;
         close(sockfd);
