@@ -206,15 +206,11 @@ std::vector<Input> inputsFromBugFile(const std::string& bug_filename,
                 inputs.push_back(i);
                 break;
             }
-            case FieldTypes::BINARY: {
+            default: {
                 const std::vector<uint8_t> val = j[field.name];
                 i.data = int_to_binary(val);
                 inputs.push_back(i);
                 break;
-            }
-            default: {
-                // Skip the rest because we are currently unconcerned of them
-                continue;
             }
         }
     }
