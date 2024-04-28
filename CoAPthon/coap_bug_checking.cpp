@@ -196,7 +196,7 @@ pid_t run_server() {
             (char*)"-ex",
             (char*)"backtrace",
             (char*)"--args",
-            (char*)"/home/javin/.pyenv/versions/coap/bin/python2",
+            (char*)"python2",
             (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",
