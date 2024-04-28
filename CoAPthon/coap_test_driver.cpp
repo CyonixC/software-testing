@@ -213,6 +213,7 @@ int sendUdpMessage(const std::string& host, uint16_t port,
     int retval = select(sockfd + 1, &readfds, nullptr, nullptr, &tv);
     if (retval == -1) {
         std::cerr << "Select error: " << strerror(errno) << std::endl;
+        return 1;
     } else if (retval) {
         char buffer[1024];
         struct sockaddr_in src_addr;
@@ -221,9 +222,7 @@ int sendUdpMessage(const std::string& host, uint16_t port,
                                (struct sockaddr*)&src_addr, &src_addr_len);
         if (len == -1) {
             std::cerr << "Receive error: " << strerror(errno) << std::endl;
-        } else {
-             std::cout << "Received response: " << std::string(buffer, len)
-                      << std::endl;  
+            return 1;
         }
     } else {
         close(sockfd);
@@ -241,30 +240,9 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     std::string coapServerHost = "127.0.0.1";
     uint16_t coapServerPort = 5683;
 
-    // std::cout << inputVectorToJSON(inputs);
-
-    // // Define the example inputs for the various parts of the CoAP message.
-    // std::vector<Input> inputs = {
-    //     {std::vector<std::byte>{std::byte(0x01)}, "Version"},                                                                                                 // CoAP version (01)
-    //     {std::vector<std::byte>{std::byte(0x00)}, "Type"},                                                                                                    // Type (Confirmable: 0)
-    //     {std::vector<std::byte>{std::byte(0x01)}, "Code"},                                                                                                    // Code: GET (0.01)
-    //     {std::vector<std::byte>{std::byte(0xC4), std::byte(0x09)}, "MessageID"},                                                                              // Message ID (0xC409)
-    //     {std::vector<std::byte>{std::byte(0x74), std::byte(0x65), std::byte(0x73), std::byte(0x74)}, "Token"},                                                // Token ('test')
-    //     {std::vector<std::byte>{std::byte('e'), std::byte('x'), std::byte('a'), std::byte('m'), std::byte('p'), std::byte('l'), std::byte('e')}, "Uri-Path"}, // Uri-Path: 'example'
-    //     //{std::vector<std::byte>{std::byte(0xC4), std::byte(0x19)}, "Payload"} // Message ID (0xC409)
-    // };
-
     // Create the CoAP message.
     std::vector<uint8_t> coapMessage = createCoapMessage(inputs);
-    // Print each byte in hex format
-    // for (uint8_t byte : coapMessage) {
-    //     // Print byte in hex with leading zeros, formatted as width of 2
-    //     std::cout << std::hex << std::setw(2) << std::setfill('0')
-    //               << static_cast<int>(byte) << ' ';
-    // }
 
-    // std::cout << std::dec << std::setw(0) << std::setfill(' ');
-    // Send the CoAP message over UDP and handle the response.
     int result =
         sendUdpMessage(coapServerHost, coapServerPort, coapMessage, shm);
     // hash here?
@@ -307,7 +285,7 @@ pid_t run_server() {
             (char*)"-ex",
             (char*)"backtrace",
             (char*)"--args",
-            (char*)"python2.7",
+            (char*)"/home/javin/.pyenv/versions/coap/bin/python2",
             (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",
