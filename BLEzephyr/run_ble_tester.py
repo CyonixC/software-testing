@@ -41,14 +41,14 @@ async def write_target(target, attribute, bytes):
     try:
         bytes_to_write = bytearray(bytes)
         await asyncio.wait_for(target.write_value(attribute, bytes_to_write, True), 1)
-        # print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
+        print(color(f'[OK] WRITE Handle 0x{attribute.handle:04X} --> Bytes={len(bytes_to_write):02d}, Val={hexlify(bytes_to_write).decode()}', 'green'))
         return True
     except ProtocolError as error:
+        print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
         return True
-        # print(color(f'[!]  Cannot write attribute 0x{attribute.handle:04X}:', 'yellow'), error)
     except asyncio.TimeoutError:
         pass
-        # print(color('[X] Write Timeout', 'red'))
+        print(color('[X] Write Timeout', 'red'))
     return False
 
 
@@ -57,14 +57,14 @@ async def read_target(target, attribute):
     try: 
         read = await asyncio.wait_for(target.read_value(attribute), 1)
         value = read.decode('latin-1')
-        # print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
+        print(color(f'[OK] READ  Handle 0x{attribute.handle:04X} <-- Bytes={len(read):02d}, Val={read.hex()}', 'cyan'))
         return True
     except ProtocolError as error:
         return True
-        # print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
+        print(color(f'[!]  Cannot read attribute 0x{attribute.handle:04X}:', 'yellow'), error)
     except asyncio.TimeoutError:
         pass
-        # print(color('[!] Read Timeout'))
+        print(color('[!] Read Timeout'))
     
     return False
 
@@ -77,8 +77,8 @@ class TargetEventsListener(Device.Listener):
 
     def on_advertisement(self, advertisement):
 
-        # print(f'{color("Advertisement", "cyan")} <-- '
-        #       f'{color(advertisement.address, "yellow")}')
+        print(f'{color("Advertisement", "cyan")} <-- '
+              f'{color(advertisement.address, "yellow")}')
         
         # Indicate that an from target advertisement has been received
         self.advertisement = advertisement
@@ -88,11 +88,11 @@ class TargetEventsListener(Device.Listener):
     @AsyncRunner.run_in_task()
     # pylint: disable=invalid-overridden-method
     async def on_connection(self, connection):
-        # print(color(f'[OK] Connected!', 'green'))
+        print(color(f'[OK] Connected!', 'green'))
         self.connection = connection
 
         # Discover all attributes (services, characteristitcs, descriptors, etc)
-        # print('=== Discovering services')
+        print('=== Discovering services')
         target = Peer(connection)
         attributes = []
         await target.discover_services()
@@ -105,7 +105,7 @@ class TargetEventsListener(Device.Listener):
                 for descriptor in characteristic.descriptors:
                     attributes.append(descriptor)
 
-        # print(color('[OK] Services discovered', 'green'))
+        print(color('[OK] Services discovered', 'green'))
         show_services(target.services)
         
         # -------- Main interaction with the target here --------
@@ -115,15 +115,14 @@ class TargetEventsListener(Device.Listener):
         fifo_write(wfd, "Attribute?")
         msg, _ = fifo_read(rfd)
         attribute_num = int.from_bytes(msg, byteorder='little')
-        # print(f"Python said: Sending {msg_count - 1} messages to attribute no. {attribute_num}")
+        print(f"Python said: Sending {msg_count - 1} messages to attribute no. {attribute_num}")
         
-        # print('=== Read/Write Attributes (Handles)')
+        print('=== Read/Write Attributes (Handles)')
         
         correct_attribute = None
         for attribute in attributes:
             if(attribute_num == attribute.handle):
                 correct_attribute = attribute
-            # print("Python said: Found attribute! " + str(attribute.handle))
         
         is_successful = True
         
@@ -134,13 +133,13 @@ class TargetEventsListener(Device.Listener):
             if(len == 0):
                 msg = []
                 
-            # print(f"Python said: Thx for the {i+1}th message!\n Sending: [", end="")
-            # for byte in msg:
-            #     print(f"0x{byte:02x}", end=", ")
-            # print("]")
+            print(f"Python said: Thx for the {i+1}th message!\n Sending: [", end="")
+            for byte in msg:
+                print(f"0x{byte:02x}", end=", ")
+            print("]")
 
             if(not(await write_target(target, correct_attribute, msg)) or not (await read_target(target, correct_attribute))):
-                # print("Zephyr Server timed out. Ending early")
+                print("Zephyr Server timed out. Ending early")
                 fifo_write(wfd, f"end")
                 is_successful = False
                 break
@@ -150,13 +149,13 @@ class TargetEventsListener(Device.Listener):
         else:
             fifo_write(wfd, "end")
         
-        # print('---------------------------------------------------------------')
-        # print(color('[OK] Communication Finished', 'green'))
-        # print('---------------------------------------------------------------')
-        # print(f"Python said: Received all messages.... closing pipes...")
+        print('---------------------------------------------------------------')
+        print(color('[OK] Communication Finished', 'green'))
+        print('---------------------------------------------------------------')
+        print(f"Python said: Received all messages.... closing pipes...")
         os.close(wfd)
         os.close(rfd)
-        # print(f"Python said: Pipe closed. Exiting...")
+        print(f"Python said: Pipe closed. Exiting...")
         
         hci_source.terminated.set_result("Done")
         # ---------------------------------------------------
@@ -166,15 +165,15 @@ class TargetEventsListener(Device.Listener):
 # -----------------------------------------------------------------------------
 async def main():
     if len(sys.argv) != 2:
-        # print('Usage: run_controller.py <transport-address>')
-        # print('example: ./run_ble_tester.py tcp-server:0.0.0.0:9000')
+        print('Usage: run_controller.py <transport-address>')
+        print('example: ./run_ble_tester.py tcp-server:0.0.0.0:9000')
         return
 
-    # print('>>> Waiting connection to HCI...')
+    print('>>> Waiting connection to HCI...')
     
     global hci_source
     async with await open_transport_or_link(sys.argv[1]) as (hci_source, hci_sink):
-        # print('>>> Connected')
+        print('>>> Connected')
 
         # Create a local communication channel between multiple controllers
         link = LocalLink()
@@ -198,7 +197,7 @@ async def main():
         await device.power_on()
         await device.start_scanning() # this calls "on_advertisement"
 
-        # print('Waiting Advertisment from BLE Target')
+        print('Waiting Advertisment from BLE Target')
         
         global rfd
         global wfd
@@ -209,11 +208,11 @@ async def main():
             await asyncio.sleep(0.5)
         await device.stop_scanning() # Stop scanning for targets
 
-        # print(color('\n[OK] Got Advertisment from BLE Target!', 'green'))
+        print(color('\n[OK] Got Advertisment from BLE Target!', 'green'))
         target_address = device.listener.advertisement.address
 
         # Start BLE connection here
-        # print(f'=== Connecting to {target_address}...')
+        print(f'=== Connecting to {target_address}...')
         await device.connect(target_address) # this calls "on_connection"
         
         # Wait in an infinite loop
