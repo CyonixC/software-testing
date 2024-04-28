@@ -191,6 +191,7 @@ int run_driver(std::vector<Input>& inputs) {
     for (char c : strMsg) {
         httpMessage.push_back(static_cast<uint8_t>(c));
     }
+    std::cout << strMsg << std::endl;
     int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
 
 

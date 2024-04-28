@@ -43,7 +43,7 @@
     "price": {
         "type": "binary",
         "validSet": "0123456789",
-        "max_length": 4
+        "max_length": 8
     }
 
   }
