@@ -222,8 +222,8 @@ int sendUdpMessage(const std::string& host, uint16_t port,
         if (len == -1) {
             std::cerr << "Receive error: " << strerror(errno) << std::endl;
         } else {
-            // std::cout << "Received response: " << std::string(buffer, len)
-            //           << std::endl;
+             std::cout << "Received response: " << std::string(buffer, len)
+                      << std::endl;  
         }
     } else {
         close(sockfd);
@@ -307,7 +307,7 @@ pid_t run_server() {
             (char*)"-ex",
             (char*)"backtrace",
             (char*)"--args",
-            (char*)"/home/professor_a/.pyenv/versions/2.7.18/bin/python",
+            (char*)"python2.7",
             (char*)"CoAPthon/coapserver.py",
             (char*)"-i",
             (char*)"127.0.0.1",

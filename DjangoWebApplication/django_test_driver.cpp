@@ -198,10 +198,29 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
         return 1;
     }
 
-    if (bytesRead > 0) {
-        response.assign(buffer, bytesRead);
-        std::cout << "Received response:\n" << response << std::endl;
+   if (bytesRead > 0) {
+    response.assign(buffer, bytesRead);
+    
+    // Log the entire response
+    std::cout << "Received response:\n" << response << std::endl;
+
+    // Find the start of the status code immediately following "HTTP/1.1"
+    std::size_t statusCodeStart = response.find("HTTP/1.1") + std::strlen("HTTP/1.1 ");
+    
+    // If we found the status code start position
+    if (statusCodeStart != std::string::npos) {
+        int statusCode = std::stoi(response.substr(statusCodeStart, 3));
+
+        // Check if the status code is in the range of 500-599
+        if (statusCode >= 500 && statusCode <= 599) {
+            std::cerr << "Server returned an error: " << statusCode << std::endl;
+            return 1;
+        }
+    } else {
+        std::cerr << "Failed to parse the status code from the response." << std::endl;
     }
+}
+
 
     if (bytesRead == 0) {
         std::cerr << "Connection closed by server" << std::endl;
