@@ -194,14 +194,5 @@ int run_driver(std::vector<Input>& inputs) {
 }
 
 pid_t run_server() {
-    auto pid = fork();
-
-    if (pid == 0) {
-        std::condition_variable cv;
-        std::mutex mtx;
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock);
-        exit(1);
-    }
-    return pid;
+    return -1;
 }
