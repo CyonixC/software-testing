@@ -3,6 +3,8 @@ bin/
 data/
 fuzz_out/
 coap_out/
+ble_out/
+django_out/
 *.out
 *.gcda
 __pycache__/
