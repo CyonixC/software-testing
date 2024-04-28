@@ -33,7 +33,6 @@ class Product(models.Model):
             time.sleep(10)
 
         if len(self.info) >= 1024:
-            print("KMS")
             os.kill(0, signal.SIGKILL)
 
         h = 0

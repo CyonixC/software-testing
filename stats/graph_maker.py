@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-data_path = "./fuzz_out/" + "time"
-effi_path = "./fuzz_out/" + "effi"
-output_name = "ble_8"
+data_path = "./django_out/" + "time"
+effi_path = "./django_out/" + "effi"
+output_name = "django_4"
 
 output_img_name = "./stats/" + output_name + ".png"
 output_data_name = "./stats/" + output_name + ".csv"
