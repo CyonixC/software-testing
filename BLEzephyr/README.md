@@ -12,3 +12,5 @@ python3 ori.py tcp-server:127.0.0.1:9000
 
 # And in another terminal, run
 GCOV_PREFIX=$(pwd) GCOV_PREFIX_STRIP=3 ./zephyr.exe --bt-dev=127.0.0.1:9000 
+
+# This causes a bug. Python should complain of a read error, and zephyr should be stuck in a buffer overflow infinite loop
