@@ -24,8 +24,8 @@ coap_bug_checker: bug_tester.cpp inputs.cpp config.cpp CoAPthon/coap_bug_checkin
 ble_bug_checker: bug_tester.cpp inputs.cpp config.cpp BLEzephyr/ble_bug_checking.cpp $(OUTPUT_FOLDER)
 	g++ bug_tester.cpp inputs.cpp BLEzephyr/ble_bug_checking.cpp config.cpp -o ${OUTPUT_FOLDER}/bug_checker.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/ble.json"
 
-django_bug_checker: bug_tester.cpp inputs.cpp config.cpp CoAPthon/coap_test_driver.cpp $(OUTPUT_FOLDER)
-	g++ bug_tester.cpp inputs.cpp CoAPthon/coap_test_driver.cpp config.cpp -o ${OUTPUT_FOLDER}/bug_checker.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/django.json"
+django_bug_checker: bug_tester.cpp inputs.cpp config.cpp DjangoWebApplication/django_bug_checking.cpp $(OUTPUT_FOLDER)
+	g++ bug_tester.cpp inputs.cpp DjangoWebApplication/django_bug_checking.cpp config.cpp -o ${OUTPUT_FOLDER}/bug_checker.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/django.json"
 
 sample: fuzz_main.cpp inputs.cpp crc16.c sample_program.cpp config.cpp $(OUTPUT_FOLDER)
 	g++ fuzz_main.cpp inputs.cpp sqlite3.o crc16.c sample_program.cpp config.cpp -o ${OUTPUT_FOLDER}/fuzz_main.out $(DEBUG_FLAG) $(SANITIZER_FLAG) -DCONFIG_FILE="configs/input_config_example.json"

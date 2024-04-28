@@ -16,44 +16,12 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include <cstdlib>
 #include "../checksum.h"
-#include "../driver.h"
-
+#include "../bug_checking.h"
 const int bufferSize = 4096;
 char buffer[bufferSize];
-
-int hash_cov_into_shm(std::array<char, SIZE>& shm, const char* filename) {
-    sqlite3* db;
-    char* zErrMsg = 0;
-    int rc;
-    rc = sqlite3_open(filename, &db);
-    if (rc) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-        return (0);
-    } else {
-        // fprintf(stderr, "Opened database successfully\n");
-    }
-
-    const char* sql = "SELECT * from arc";
-    sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
-    int ncols = sqlite3_column_count(stmt);
-    int res;
-    do {
-        res = sqlite3_step(stmt);
-        uint16_t crc = 0;
-        for (int i = 0; i < ncols; i++) {
-            int item = sqlite3_column_int(stmt, i);
-            crc = update_crc_16(crc, item);
-        }
-        shm[crc]++;
-    } while (res == SQLITE_ROW);
-    sqlite3_finalize(stmt);
-    int res1 = sqlite3_close(db);
-    return 0;
-}
-
-
+// Function to construct the CoAP message using the Input vector.
 std::string createHttpRequest(const std::vector<Input>& inputs) {
     std::map<std::string, std::string> headers;
     std::ostringstream body;
@@ -136,7 +104,6 @@ std::string createHttpRequest(const std::vector<Input>& inputs) {
 
     return request.str();
 }
-
 int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std::vector<uint8_t>& message) {
     // Create a TCP socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -149,7 +116,7 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 
     // Set the receive timeout option on the socket
     struct timeval timeout;
-    timeout.tv_sec = 10;  // 10 Seconds timeout
+    timeout.tv_sec = 1;  // 10 Seconds timeout
     timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
         std::cerr << "Set timeout failed: " << strerror(errno) << std::endl;
@@ -185,12 +152,11 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
 
     // Receive response from the server
     std::string response;
-    ssize_t bytesRead = recv(sockfd, buffer, bufferSize - 1, 0); // Leave space for null terminator    std::cout<<bytesRead;
+    ssize_t bytesRead = recv(sockfd, buffer, bufferSize - 1, 0); 
 
     if (bytesRead < 0) {
-        // If no response is received before the timeout, recv will fail with EWOULDBLOCK/EAGAIN
         if (errno == EWOULDBLOCK || errno == EAGAIN) {
-            std::cerr << "Receive timed out" << std::endl;
+            std::cerr << "Receive timed out " << strerror(errno) <<std::endl;
         } else {
             std::cerr << "Receive failed: " << strerror(errno) << std::endl;
         }
@@ -198,29 +164,10 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
         return 1;
     }
 
-   if (bytesRead > 0) {
-    response.assign(buffer, bytesRead);
-    
-    // Log the entire response
-    std::cout << "Received response:\n" << response << std::endl;
-
-    // Find the start of the status code immediately following "HTTP/1.1"
-    std::size_t statusCodeStart = response.find("HTTP/1.1") + std::strlen("HTTP/1.1 ");
-    
-    // If we found the status code start position
-    if (statusCodeStart != std::string::npos) {
-        int statusCode = std::stoi(response.substr(statusCodeStart, 3));
-
-        // Check if the status code is in the range of 500-599
-        if (statusCode >= 500 && statusCode <= 599) {
-            std::cerr << "Server returned an error: " << statusCode << std::endl;
-            return 1;
-        }
-    } else {
-        std::cerr << "Failed to parse the status code from the response." << std::endl;
+    if (bytesRead > 0) {
+        response.assign(buffer, bytesRead);
+        std::cout << "Received response:\n" << response << std::endl;
     }
-}
-
 
     if (bytesRead == 0) {
         std::cerr << "Connection closed by server" << std::endl;
@@ -231,7 +178,8 @@ int sendTcpMessageWithTimeout(const std::string& host, uint16_t port, const std:
     close(sockfd);
     return 0; 
 }
-int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
+
+int run_driver(std::vector<Input>& inputs) {
     std::string coapServerHost = "127.0.0.1";
     uint16_t coapServerPort = 8000;
 
@@ -245,7 +193,6 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
     }
     int result = sendTcpMessageWithTimeout(coapServerHost, coapServerPort, httpMessage);
 
-    hash_cov_into_shm(shm, "data/.coverage");
 
     if (result == 1) {
         std::cout << "Timeout occurred or no response received." << std::endl;
@@ -254,13 +201,17 @@ int run_driver(std::array<char, SIZE>& shm, std::vector<Input>& inputs) {
 
     return 0;
 }
-
 pid_t pid;
 
 void signalHandler(int signal) {
     std::cout << "Terminating pid: " << pid << "\n";
     killpg(getpgid(pid), SIGINT);
     exit(1);
+}
+
+void exitHandler() {
+    std::cout << "Terminating pid: " << pid << "\n";
+    killpg(getpgid(pid), SIGINT);
 }
 
 pid_t run_server() {
@@ -308,6 +259,7 @@ pid_t run_server() {
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);
     signal(SIGQUIT, signalHandler);
+    atexit(exitHandler);
 
 
     // Parent process

@@ -204,6 +204,7 @@ int main() {
             if (failed) {
                 kill(pid, SIGTERM);
                 pid = run_server();
+                sleep(5);  // Wait for the server to start, on actual should probably use a signal or something
             }
             if (isInteresting(coverage_arr, failed)) {
                 seedQueue.emplace(mutated);
