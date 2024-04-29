@@ -68,6 +68,12 @@ The environment setup is identical to the Django instructions above. Please refe
 
 Additionally, the [SQLite](https://www.sqlite.org/download.html) C++ library must be installed to collect coverage information. The code should work after installation.
 
+```shell
+# (in root folder)
+make django
+./bin/fuzz_main.out
+```
+
 ## CoAP
 
 ***IMPORTANT***: The python path must be manually changed in the code file.
@@ -77,6 +83,12 @@ The python 2 path must be modified at line `289` in [`CoAPthon/coap_test_driver.
 Please refer to `Setting up CoAP environment` above.
 
 In addition, [SQLite](https://www.sqlite.org/download.html) must be installed to collect coverage information, and the `coverage` module from PyPI must be installed as well.
+
+```shell
+# (in root folder)
+make coap
+./bin/fuzz_main.out
+```
 
 ## BLE Zephyr
 
