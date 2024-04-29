@@ -33,7 +33,15 @@ make django_bug_checker
 ***IMPORTANT***:
 The Python path needs to be **manually** changed in the code to direct the program to the right version of python 2 **before** attempting to compile the code.
 
-The python 2 path must be modified at line `199` in `CoAPthon/coap_bug_checking.cpp`. Change this to the location of your local install of Python2.
+The python 2 path must be modified at line `199` in [`CoAPthon/coap_bug_checking.cpp`](CoAPthon/coap_bug_checking.cpp?plain=1#L199). Change this to the location of your local install of Python2.
+
+### Running CoAP checker
+
+```shell
+# (in root folder)
+make coap_bug_checker
+./bin/bug_checker.out <path_to_json_file>
+```
 
 ## BLE Zephyr
 
@@ -50,14 +58,6 @@ make ble_bug_checker
 ./bin/bug_chcker.out <path_to_json_file>
 ```
 
-### Running CoAP checker
-
-```shell
-# (in root folder)
-make coap_bug_checker
-./bin/bug_checker.out <path_to_json_file>
-```
-
 # **Fuzzing**
 
 If attempting to run the fuzzers, a few more environment setup steps are needed.
@@ -70,7 +70,11 @@ Additionally, the [SQLite](https://www.sqlite.org/download.html) C++ library mus
 
 ## CoAP
 
-***IMPORTANT***: The python path must be manually changed in the code file. Please refer to `Setting up CoAP environment` above.
+***IMPORTANT***: The python path must be manually changed in the code file.
+
+The python 2 path must be modified at line `289` in [`CoAPthon/coap_test_driver.cpp`](CoAPthon/coap_test_driver.cpp?plain=1#L289). Change this to the location of your local install of Python2.
+
+Please refer to `Setting up CoAP environment` above.
 
 In addition, [SQLite](https://www.sqlite.org/download.html) must be installed to collect coverage information, and the `coverage` module from PyPI must be installed as well.
 
